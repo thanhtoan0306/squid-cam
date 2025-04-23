@@ -21,8 +21,8 @@ function createWindows() {
 
   // Tạo cửa sổ phụ (ví dụ: cửa sổ điều khiển bên phải)
   secondaryWindow = new BrowserWindow({
-    width: 300,    // Chiều rộng nhỏ hơn
-    height: 600,   // Chiều cao có thể bằng cửa sổ chính
+    width: 360,    // Chiều rộng nhỏ hơn
+    height: 640,   // Chiều cao có thể bằng cửa sổ chính
     parent: mainWindow, // Tùy chọn: Đặt cửa sổ chính làm cha
     x: mainWindow.getBounds().x + mainWindow.getBounds().width, // Đặt vị trí X bên phải cửa sổ chính
     y: mainWindow.getBounds().y, // Đặt vị trí Y cùng với cửa sổ chính
@@ -30,8 +30,8 @@ function createWindows() {
       nodeIntegration: true,
       contextIsolation: false
     },
-    frame: true, // Có thể ẩn frame nếu muốn (frame: false)
-    // Các tùy chọn khác: alwaysOnTop: true, minimizable: false, etc.
+    frame: true, // Ẩn thanh menu và viền cửa sổ
+    resizable: false // Không cho resize để giữ đúng tỷ lệ
   });
 
   // Load file HTML cho cửa sổ phụ
@@ -44,8 +44,8 @@ function createWindows() {
       // Nếu bạn đã có sẵn đoạn tạo secondaryWindow thì gọi lại đoạn đó
       // Ví dụ:
       secondaryWindow = new BrowserWindow({
-        width: 400,
-        height: 600,
+        width: 360,
+        height: 640,
         parent: mainWindow,
         x: mainWindow.getBounds().x + mainWindow.getBounds().width,
         y: mainWindow.getBounds().y,
@@ -53,7 +53,12 @@ function createWindows() {
           nodeIntegration: true,
           contextIsolation: false
         },
-        frame: true,
+        frame: true,           // Có khung cửa sổ (giữ nút close)
+        minimizable: false,    // Không cho thu nhỏ
+        maximizable: false,    // Không cho phóng to
+        closable: true,        // Cho phép đóng
+        autoHideMenuBar: true, // Ẩn menu bar
+        resizable: false       // Không cho resize
       });
       secondaryWindow.loadFile('secondary.html');
     } else {
