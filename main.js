@@ -36,22 +36,31 @@ ipcMain.on("open-secondary-window", () => {
     // Đảm bảo bạn có hàm tạo secondaryWindow, ví dụ như createWindows() hoặc tách riêng hàm tạo secondary window
     // Nếu bạn đã có sẵn đoạn tạo secondaryWindow thì gọi lại đoạn đó
     // Ví dụ:
+    // secondaryWindow = new BrowserWindow({
+    //   width: 360,
+    //   height: 640,
+    //   parent: mainWindow,
+    //   x: mainWindow.getBounds().x + mainWindow.getBounds().width,
+    //   y: mainWindow.getBounds().y,
+    //   webPreferences: {
+    //     nodeIntegration: true,
+    //     contextIsolation: false,
+    //   },
+    //   frame: true, // Có khung cửa sổ (giữ nút close)
+    //   minimizable: false, // Không cho thu nhỏ
+    //   maximizable: false, // Không cho phóng to
+    //   closable: true, // Cho phép đóng
+    //   autoHideMenuBar: true, // Ẩn menu bar
+    //   resizable: false, // Không cho resize
+    // });
     secondaryWindow = new BrowserWindow({
       width: 360,
       height: 640,
-      parent: mainWindow,
-      x: mainWindow.getBounds().x + mainWindow.getBounds().width,
-      y: mainWindow.getBounds().y,
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
+        preload: path.join(__dirname, "preload.js"), // Tùy chọn: nếu cần preload script
+        nodeIntegration: true, // Cân nhắc vấn đề bảo mật nếu bật
+        contextIsolation: false, // Cân nhắc vấn đề bảo mật nếu tắt
       },
-      frame: true, // Có khung cửa sổ (giữ nút close)
-      minimizable: false, // Không cho thu nhỏ
-      maximizable: false, // Không cho phóng to
-      closable: true, // Cho phép đóng
-      autoHideMenuBar: true, // Ẩn menu bar
-      resizable: false, // Không cho resize
     });
     secondaryWindow.loadFile("secondary.html");
   } else {
