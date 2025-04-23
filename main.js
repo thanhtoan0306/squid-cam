@@ -61,6 +61,7 @@ ipcMain.on("open-secondary-window", () => {
         nodeIntegration: true, // Cân nhắc vấn đề bảo mật nếu bật
         contextIsolation: false, // Cân nhắc vấn đề bảo mật nếu tắt
       },
+      autoHideMenuBar: true, // Ẩn menu bar
     });
     secondaryWindow.loadFile("secondary.html");
   } else {
