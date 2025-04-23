@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Main Window</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f0f0; /* Màu nền nhạt */
+        }
+        #video-preview {
+            flex-grow: 1; /* Chiếm phần lớn không gian */
+            background-color: #333; /* Màu nền tối cho khu vực video */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 1.5em;
+            /* Trong ứng dụng thực tế, bạn sẽ đặt thẻ <video> ở đây */
+            border-bottom: 1px solid #ccc;
+        }
+        #main-controls {
+            padding: 10px;
+            background-color: #e0e0e0; /* Nền sáng hơn cho control */
+            display: flex;
+            justify-content: space-between; /* Phân bố các nút */
+            align-items: center;
+        }
+        #left-controls button, #right-controls button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+        #start-stream-button {
+            background-color: #ffcc00; /* Màu vàng giống ảnh */
+            border: none;
+            font-weight: bold;
+        }
+        #applied-effect {
+             margin-top: 10px;
+             font-style: italic;
+             color: #555;
+             text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-preview">
+        Video Preview Area
+        <div id="applied-effect">No effect applied</div>
+    </div>
+
+    <div id="main-controls">
+        <div id="left-controls">
+             <button>Camera</button>
+             <button>Capture</button>
+             <button>Multimedia</button>
+             <button>RTMP</button>
+             </div>
+        <div id="right-controls">
+            <button id="start-stream-button">Start Streaming</button>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+
+        const appliedEffectDiv = document.getElementById('applied-effect');
+
+        // Lắng nghe thông điệp 'update-effect' từ main process
+        ipcRenderer.on('update-effect', (event, effectName) => {
+            console.log(`Main window received effect: ${effectName}`);
+            // Hiển thị tên hiệu ứng đang được áp dụng
+            appliedEffectDiv.textContent = `Applied Effect: ${effectName}`;
+            // Gọi hàm thực tế để áp dụng hiệu ứng lên video ở đây
+            // applyEffectToVideo(effectName);
+        });
+
+        // Ví dụ hàm giả định để áp dụng hiệu ứng
+        // function applyEffectToVideo(effectName) {
+        //     console.log(`Function to apply ${effectName} would run here.`);
+        // }
+    </script>
+</body>
+</html>

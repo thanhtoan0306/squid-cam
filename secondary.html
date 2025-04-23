@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Controls</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f8f8f8; /* Nền rất sáng */
+            font-size: 0.9em;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+        .control-section {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 4px;
+            background-color: white;
+        }
+        .control-section h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            font-size: 1em;
+        }
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); /* Grid linh hoạt */
+            gap: 8px; /* Khoảng cách giữa các nút */
+        }
+        .button-grid button {
+            padding: 10px 5px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            background-color: #f0f0f0;
+            border-radius: 3px;
+            font-size: 0.85em;
+            /* Thêm icon hoặc hình ảnh vào nút nếu muốn */
+        }
+         .button-grid button:hover {
+             background-color: #e0e0e0;
+         }
+         .button-grid button:active {
+              background-color: #d0d0d0;
+         }
+    </style>
+</head>
+<body>
+    <div class="control-section">
+        <h4>Trigger Animation 👍</h4>
+        <div class="button-grid effect-buttons">
+            <button data-effect="ThumbsUp">👍</button>
+            <button data-effect="FireBreath">🔥</button>
+            <button data-effect="Sparkle">✨</button>
+            <button data-effect="Sad">😢</button>
+             <button data-effect="Thinking">🤔</button>
+             <button data-effect="MakeItRain">💰</button>
+            </div>
+    </div>
+
+    <div class="control-section">
+        <h4>Effects</h4>
+         <div class="button-grid effect-buttons">
+            <button data-effect="Blur">Blur</button>
+            <button data-effect="Pixelate">Pixel</button>
+            <button data-effect="Sepia">Sepia</button>
+            <button data-effect="Invert">Invert</button>
+         </div>
+    </div>
+
+    <div class="control-section">
+        <h4>Sound Animation 🔊</h4>
+        <div class="button-grid sound-buttons">
+             <button data-sound="Applause">👏</button>
+             <button data-sound="ColdWind">💨</button>
+             <button data-sound="Crow">🐦</button>
+             <button data-sound="Laugh">😂</button>
+            </div>
+    </div>
+
+     <script>
+        const { ipcRenderer } = require('electron');
+
+        // Lấy tất cả các nút hiệu ứng và âm thanh
+        const effectButtons = document.querySelectorAll('.effect-buttons button');
+        const soundButtons = document.querySelectorAll('.sound-buttons button');
+
+        // Thêm sự kiện click cho các nút hiệu ứng
+        effectButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const effectName = button.dataset.effect; // Lấy tên hiệu ứng từ data-effect
+                console.log(`Secondary window sending effect: ${effectName}`);
+                // Gửi tên hiệu ứng đến main process
+                ipcRenderer.send('apply-effect', effectName);
+            });
+        });
+
+        // Thêm sự kiện click cho các nút âm thanh (ví dụ)
+        soundButtons.forEach(button => {
+             button.addEventListener('click', () => {
+                 const soundName = button.dataset.sound;
+                 console.log(`Secondary window sending sound: ${soundName}`);
+                 // Có thể gửi một loại message khác cho âm thanh
+                 ipcRenderer.send('play-sound', soundName);
+             });
+        });
+    </script>
+</body>
+</html>

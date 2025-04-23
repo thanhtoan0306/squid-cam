@@ -1,0 +1,19 @@
+{
+    "name": "squid-cam",
+    "version": "1.0.0",
+    "description": "A sample Electron app with two windows",
+    "main": "main.js",
+    "scripts": {
+      "start": "electron ." 
+    },
+    "keywords": [
+      "Electron",
+      "multi-window",
+      "demo"
+    ],
+    "author": "Thanh Toan",
+    "license": "MIT", 
+    "devDependencies": {
+      "electron": "^29.0.0"
+    }
+  }
