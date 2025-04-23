@@ -22,21 +22,11 @@ function createWindows() {
   // Xử lý khi cửa sổ chính đóng
   mainWindow.on("closed", () => {
     mainWindow = null;
-    // Đóng cả cửa sổ phụ khi cửa sổ chính đóng (nếu muốn)
-    if (secondaryWindow) {
-      secondaryWindow.close();
-    }
   });
 
   // Tùy chỉnh vị trí cửa sổ phụ khi cửa sổ chính di chuyển hoặc thay đổi kích thước (nếu cần)
   mainWindow.on("move", () => {
     const mainBounds = mainWindow.getBounds();
-    if (secondaryWindow) {
-      secondaryWindow.setPosition(
-        mainBounds.x + mainBounds.width,
-        mainBounds.y
-      );
-    }
   });
 }
 
