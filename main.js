@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -36,6 +36,32 @@ function createWindows() {
 
   // Load file HTML cho cửa sổ phụ
   secondaryWindow.loadFile('secondary.html');
+
+  ipcMain.on('open-secondary-window', () => {
+    if (!secondaryWindow || secondaryWindow.isDestroyed()) {
+      // Nếu cửa sổ phụ chưa mở hoặc đã đóng thì tạo lại
+      // Đảm bảo bạn có hàm tạo secondaryWindow, ví dụ như createWindows() hoặc tách riêng hàm tạo secondary window
+      // Nếu bạn đã có sẵn đoạn tạo secondaryWindow thì gọi lại đoạn đó
+      // Ví dụ:
+      secondaryWindow = new BrowserWindow({
+        width: 400,
+        height: 600,
+        parent: mainWindow,
+        x: mainWindow.getBounds().x + mainWindow.getBounds().width,
+        y: mainWindow.getBounds().y,
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false
+        },
+        frame: true,
+      });
+      secondaryWindow.loadFile('secondary.html');
+    } else {
+      // Nếu đã có thì chỉ cần focus
+      secondaryWindow.focus();
+    }
+  });
+
 
   // Xử lý khi cửa sổ chính đóng
   mainWindow.on('closed', () => {
