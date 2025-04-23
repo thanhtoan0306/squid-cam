@@ -70,7 +70,11 @@ ipcMain.on("open-secondary-window", () => {
   }
 });
 
-// Gọi hàm tạo cửa sổ khi ứng dụng sẵn sàng
+ipcMain.on("toggle-mirror-secondary", () => {
+  if (secondaryWindow && !secondaryWindow.isDestroyed()) {
+    secondaryWindow.webContents.send("toggle-mirror");
+  }
+});
 app.whenReady().then(() => {
   createWindows();
 

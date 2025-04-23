@@ -72,6 +72,7 @@
     </div>
     <!-- Nút mở cửa sổ secondary -->
     <button id="open-secondary-btn">Mở cửa sổ hiệu ứng phụ</button>
+    <button id="mirror-secondary-btn">Mirror Secondary Video</button>
 
     <!-- Effects section -->
     <div class="control-section">
@@ -97,6 +98,7 @@
 
     <script>
       const { ipcRenderer } = require("electron");
+      window.ipcRenderer = ipcRenderer; // Đảm bảo có thể truy cập từ mọi nơi
 
       const appliedEffectDiv = document.getElementById("applied-effect");
 
@@ -126,11 +128,16 @@
           ipcRenderer.send("play-sound", sound);
         });
       });
+      document.getElementById("mirror-secondary-btn").addEventListener("click", () => {
+        console.log("Mirror secondary video");
+        ipcRenderer.send("toggle-mirror-secondary");
+      });
 
       // Nút mở cửa sổ secondary
       document
         .getElementById("open-secondary-btn")
         .addEventListener("click", () => {
+          console.log("Open secondary window");
           ipcRenderer.send("open-secondary-window");
         });
     </script>
