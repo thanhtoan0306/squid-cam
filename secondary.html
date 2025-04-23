@@ -24,7 +24,22 @@
         background: #000;
         display: block;
       }
+      #webcam-video {
+        display: none;
+      }
+      #output-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        background: #000;
+        z-index: 1;
+      }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
   </head>
   <body>
     <video
@@ -39,6 +54,7 @@
         display: block;
       "
     ></video>
+    <canvas id="output-canvas"></canvas>
     <script>
       // Use getUserMedia to access webcam and display in video
       navigator.mediaDevices

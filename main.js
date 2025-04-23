@@ -63,7 +63,9 @@ ipcMain.on("open-secondary-window", () => {
       },
       autoHideMenuBar: true, // Ẩn menu bar
     });
-    secondaryWindow.loadFile("secondary.html");
+    secondaryWindow.loadFile("cam2mediapipe.html");
+    secondaryWindow.webContents.openDevTools({ mode: 'detach' }); // mode 'detach' mở ra cửa sổ riêng, có thể dùng 'right', 'bottom', 'undocked'
+
   } else {
     // Nếu đã có thì chỉ cần focus
     secondaryWindow.focus();

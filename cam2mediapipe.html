@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MediaPipe Background Removal</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+    }
+    #canvas {
+      border: 2px solid #333;
+      max-width: 100%;
+    }
+    #video {
+      display: none;
+    }
+  </style>
+  <!-- Load MediaPipe Selfie Segmentation -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Initialize MediaPipe Selfie Segmentation
+    const selfieSegmentation = new SelfieSegmentation({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/${file}`
+    });
+
+    selfieSegmentation.setOptions({
+      modelSelection: 1, // 0 for general, 1 for landscape
+      selfieMode: true  // Flip image horizontally
+    });
+
+    // Process segmentation results
+    selfieSegmentation.onResults((results) => {
+      // Set canvas dimensions to match video
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw segmented person
+      ctx.drawImage(results.segmentationMask, 0, 0, canvas.width, canvas.height);
+      ctx.globalCompositeOperation = 'source-in';
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+      // Reset composite operation
+      ctx.globalCompositeOperation = 'source-over';
+
+      // Optional: Draw a custom background (e.g., solid color)
+      // ctx.fillStyle = 'rgba(0, 255, 0, 1)'; // Green background
+      // ctx.fillRect(0, 0, canvas.width, canvas.height);
+      // ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+    });
+
+    // Start webcam
+    async function startWebcam() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: 360, height: 640 }
+        });
+        video.srcObject = stream;
+        video.play();
+      } catch (err) {
+        console.error('Error accessing webcam:', err);
+      }
+    }
+
+    // Process frames
+    async function processFrame() {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        await selfieSegmentation.send({ image: video });
+      }
+      requestAnimationFrame(processFrame);
+    }
+
+    // Initialize
+    async function init() {
+      await selfieSegmentation.initialize();
+      await startWebcam();
+      processFrame();
+    }
+
+    init();
+  </script>
+</body>
+</html>
