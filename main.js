@@ -77,9 +77,9 @@ ipcMain.on("toggle-mirror-secondary", () => {
   }
 });
 
-ipcMain.on("toggle-background-removal", () => {
+ipcMain.on("toggle-background-removal", (event, enabled) => {
   if (secondaryWindow && !secondaryWindow.isDestroyed()) {
-    secondaryWindow.webContents.send("toggle-background-removal");
+    secondaryWindow.webContents.send("toggle-background-removal", enabled);
   }
 });
 
