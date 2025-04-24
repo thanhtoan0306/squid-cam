@@ -1,0 +1,6 @@
+/* Basic styling for components */
+body { font-family: Arial, sans-serif; background: #f8f8f8; margin: 0; }
+#app { max-width: 700px; margin: 32px auto; background: #fff; box-shadow: 0 2px 8px #ccc; border-radius: 8px; overflow: hidden; }
+header, footer { background: #222; color: #fff; padding: 16px; text-align: center; }
+#controls { display: flex; justify-content: center; gap: 12px; margin: 20px 0; }
+#webcam-container { display: flex; justify-content: center; padding: 16px; }
