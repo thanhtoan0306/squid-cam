@@ -64,8 +64,7 @@ ipcMain.on("open-secondary-window", () => {
       autoHideMenuBar: true, // Ẩn menu bar
     });
     secondaryWindow.loadFile("cam2mediapipe.html");
-    secondaryWindow.webContents.openDevTools({ mode: 'detach' }); // mode 'detach' mở ra cửa sổ riêng, có thể dùng 'right', 'bottom', 'undocked'
-
+    secondaryWindow.webContents.openDevTools({ mode: "detach" }); // mode 'detach' mở ra cửa sổ riêng, có thể dùng 'right', 'bottom', 'undocked'
   } else {
     // Nếu đã có thì chỉ cần focus
     secondaryWindow.focus();
@@ -77,6 +76,13 @@ ipcMain.on("toggle-mirror-secondary", () => {
     secondaryWindow.webContents.send("toggle-mirror");
   }
 });
+
+ipcMain.on("toggle-background-removal", () => {
+  if (secondaryWindow && !secondaryWindow.isDestroyed()) {
+    secondaryWindow.webContents.send("toggle-background-removal");
+  }
+});
+
 app.whenReady().then(() => {
   createWindows();
 

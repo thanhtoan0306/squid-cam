@@ -82,6 +82,7 @@
         <button data-effect="Pixelate">Pixel</button>
         <button data-effect="Sepia">Sepia</button>
         <button data-effect="Invert">Invert</button>
+        <button id="toggle-background-btn">Toggle Background</button>
       </div>
     </div>
 
@@ -128,10 +129,12 @@
           ipcRenderer.send("play-sound", sound);
         });
       });
-      document.getElementById("mirror-secondary-btn").addEventListener("click", () => {
-        console.log("Mirror secondary video");
-        ipcRenderer.send("toggle-mirror-secondary");
-      });
+      document
+        .getElementById("mirror-secondary-btn")
+        .addEventListener("click", () => {
+          console.log("Mirror secondary video");
+          ipcRenderer.send("toggle-mirror-secondary");
+        });
 
       // Nút mở cửa sổ secondary
       document
@@ -140,6 +143,30 @@
           console.log("Open secondary window");
           ipcRenderer.send("open-secondary-window");
         });
+
+      const toggleBackgroundBtn = document.getElementById(
+        "toggle-background-btn"
+      );
+      let isBackgroundRemovalEnabled = true;
+
+      // Toggle background removal
+      toggleBackgroundBtn.addEventListener("click", () => {
+        isBackgroundRemovalEnabled = !isBackgroundRemovalEnabled;
+
+        // Send message to main process to toggle background removal
+        ipcRenderer.send(
+          "toggle-background-removal",
+          isBackgroundRemovalEnabled
+        );
+
+        // Update button text and style
+        toggleBackgroundBtn.textContent = isBackgroundRemovalEnabled
+          ? "Hide Background"
+          : "Show Background";
+        toggleBackgroundBtn.style.backgroundColor = isBackgroundRemovalEnabled
+          ? "#4CAF50"
+          : "#FF5722";
+      });
     </script>
   </body>
 </html>
