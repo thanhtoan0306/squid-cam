@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-
+const { startTikTokServer } = require('./tiktok-server');
 let mainWindow;
 let secondaryWindow;
 
@@ -89,6 +89,7 @@ app.whenReady().then(() => {
   app.on("activate", () => {
     // Đảm bảo tạo lại cửa sổ nếu không có cửa sổ nào mở (macOS)
     if (BrowserWindow.getAllWindows().length === 0) {
+      startTikTokServer(); // Start your Express + Socket.IO server
       createWindows();
     }
   });
