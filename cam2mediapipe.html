@@ -28,6 +28,8 @@
       src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/selfie_segmentation.js"
       crossorigin="anonymous"
     ></script>
+    <!-- Load MediaPipe FaceMesh for eye landmarks -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   </head>
   <body>
     <video id="video" autoplay playsinline></video>
@@ -46,11 +48,34 @@
           `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation@0.1/${file}`,
       });
 
+      // Initialize MediaPipe FaceMesh
+      const faceMesh = new FaceMesh({
+  locateFile: (file) => {
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+  }
+});
+      faceMesh.setOptions({
+        maxNumFaces: 1,
+        refineLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+        selfieMode: true,
+      });
+
       selfieSegmentation.setOptions({
         modelSelection: 1, // 0 for general, 1 for landscape
         selfieMode: true, // Flip image horizontally
       });
 
+      let lastFaceLandmarks = null;
+
+      faceMesh.onResults((results) => {
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+          lastFaceLandmarks = results.multiFaceLandmarks[0];
+        } else {
+          lastFaceLandmarks = null;
+        }
+      });
 
       // Process segmentation results
       selfieSegmentation.onResults((results) => {
@@ -79,6 +104,28 @@
           // Draw original video
           ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
         }
+
+        // Vẽ 2 hình chữ nhật màu xanh vào vị trí 2 mắt dựa trên landmark
+        if (lastFaceLandmarks) {
+          // Landmark chỉ số 33: mắt phải, 263: mắt trái (theo MediaPipe FaceMesh)
+          const rightEye = lastFaceLandmarks[33];
+          const leftEye = lastFaceLandmarks[263];
+          // Chuyển đổi sang toạ độ canvas
+          const rightEyeX = rightEye.x * canvas.width;
+          const rightEyeY = rightEye.y * canvas.height;
+          const leftEyeX = leftEye.x * canvas.width;
+          const leftEyeY = leftEye.y * canvas.height;
+
+          const rectWidth = 60;
+          const rectHeight = 30;
+
+          ctx.save();
+          ctx.strokeStyle = "#00ff00";
+          ctx.lineWidth = 4;
+          ctx.strokeRect(rightEyeX - rectWidth/2, rightEyeY - rectHeight/2, rectWidth, rectHeight);
+          ctx.strokeRect(leftEyeX - rectWidth/2, leftEyeY - rectHeight/2, rectWidth, rectHeight);
+          ctx.restore();
+        }
       });
       const { ipcRenderer } = require("electron");
 
@@ -105,6 +152,7 @@
       async function processFrame() {
         if (video.readyState === video.HAVE_ENOUGH_DATA) {
           await selfieSegmentation.send({ image: video });
+          await faceMesh.send({ image: video });
         }
         requestAnimationFrame(processFrame);
       }
@@ -112,6 +160,7 @@
       // Initialize
       async function init() {
         await selfieSegmentation.initialize();
+        await faceMesh.initialize();
         await startWebcam();
         processFrame();
       }
