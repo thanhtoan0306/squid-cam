@@ -363,6 +363,9 @@
                         // Enemy died
                         gameState.gold += enemy.value;
                         enemy.healthBar.destroy();
+                        // Clear photo and name if exist
+                        if (enemy.usernameText) enemy.usernameText.destroy();
+                        if (enemy.photoImage) enemy.photoImage.destroy();
                         enemy.destroy();
                     }
                 }
