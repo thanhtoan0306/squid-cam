@@ -17,7 +17,8 @@
         justify-content: center;
         height: 100vh;
       }
-      #tiktok-btn {
+      #tiktok-btn,
+      #open-secondary-btn {
         padding: 15px 30px;
         font-size: 1.2em;
         background: #ff0050;
@@ -25,18 +26,24 @@
         border: none;
         border-radius: 8px;
         cursor: pointer;
+        margin-bottom: 20px;
       }
       #tiktok-btn.off {
         background: #888;
+      }
+      #open-secondary-btn {
+        background: #0099ff;
       }
     </style>
   </head>
   <body>
     <button id="tiktok-btn" class="off">Connect TikTok Live</button>
+    <button id="open-secondary-btn">Open Tower Defense</button>
     <script>
       const { ipcRenderer } = require("electron");
       let connected = false;
       const tiktokBtn = document.getElementById("tiktok-btn");
+      const openSecondaryBtn = document.getElementById("open-secondary-btn");
 
       tiktokBtn.addEventListener("click", () => {
         if (!connected) {
@@ -49,6 +56,10 @@
           tiktokBtn.classList.add("off");
         }
         connected = !connected;
+      });
+
+      openSecondaryBtn.addEventListener("click", () => {
+        ipcRenderer.send("open-secondary-window");
       });
 
       ipcRenderer.on("tiktok-chat", (event, data) => {

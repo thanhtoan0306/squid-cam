@@ -78,6 +78,7 @@
             <span id="wave">Wave: 1</span>
         </div>
     </div>
+    <div id="chat-box" style="width: 400px; max-height: 200px; overflow-y: auto; background: #111; color: #fff; margin-top: 20px; border-radius: 8px; padding: 10px; font-size: 16px;"></div>
 
     <script>
         // Game variables
@@ -428,6 +429,20 @@
 
         // Start the game
         const game = new Phaser.Game(config);
+
+        // TikTok chat integration
+        try {
+            const { ipcRenderer } = require("electron");
+            const chatBox = document.getElementById("chat-box");
+            ipcRenderer.on("tiktok-chat", (event, data) => {
+                const msg = document.createElement("div");
+                msg.textContent = `${data.user}: ${data.comment}`;
+                chatBox.appendChild(msg);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            });
+        } catch (e) {
+            // Not running in Electron, ignore
+        }
     </script>
 </body>
 </html>

@@ -12,9 +12,10 @@ function createWindows() {
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"), // Tùy chọn: nếu cần preload script
-      nodeIntegration: true, // Cân nhắc vấn đề bảo mật nếu bật
-      contextIsolation: false, // Cân nhắc vấn đề bảo mật nếu tắt
+      // Remove or comment out the next line:
+      // preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: true,
+      contextIsolation: false,
     },
   });
 
@@ -34,41 +35,18 @@ function createWindows() {
 
 ipcMain.on("open-secondary-window", () => {
   if (!secondaryWindow || secondaryWindow.isDestroyed()) {
-    // Nếu cửa sổ phụ chưa mở hoặc đã đóng thì tạo lại
-    // Đảm bảo bạn có hàm tạo secondaryWindow, ví dụ như createWindows() hoặc tách riêng hàm tạo secondary window
-    // Nếu bạn đã có sẵn đoạn tạo secondaryWindow thì gọi lại đoạn đó
-    // Ví dụ:
-    // secondaryWindow = new BrowserWindow({
-    //   width: 360,
-    //   height: 640,
-    //   parent: mainWindow,
-    //   x: mainWindow.getBounds().x + mainWindow.getBounds().width,
-    //   y: mainWindow.getBounds().y,
-    //   webPreferences: {
-    //     nodeIntegration: true,
-    //     contextIsolation: false,
-    //   },
-    //   frame: true, // Có khung cửa sổ (giữ nút close)
-    //   minimizable: false, // Không cho thu nhỏ
-    //   maximizable: false, // Không cho phóng to
-    //   closable: true, // Cho phép đóng
-    //   autoHideMenuBar: true, // Ẩn menu bar
-    //   resizable: false, // Không cho resize
-    // });
     secondaryWindow = new BrowserWindow({
-      width: 360,
-      height: 640,
+      width: 900,
+      height: 700,
       webPreferences: {
-        preload: path.join(__dirname, "preload.js"), // Tùy chọn: nếu cần preload script
-        nodeIntegration: true, // Cân nhắc vấn đề bảo mật nếu bật
-        contextIsolation: false, // Cân nhắc vấn đề bảo mật nếu tắt
+        nodeIntegration: true,
+        contextIsolation: false,
       },
-      autoHideMenuBar: true, // Ẩn menu bar
+      autoHideMenuBar: true,
     });
-    secondaryWindow.loadFile("cam2mediapipe.html");
-    secondaryWindow.webContents.openDevTools({ mode: "detach" }); // mode 'detach' mở ra cửa sổ riêng, có thể dùng 'right', 'bottom', 'undocked'
+    secondaryWindow.loadFile("towerdefense.html");
+    // secondaryWindow.webContents.openDevTools({ mode: "detach" }); // Optional: DevTools
   } else {
-    // Nếu đã có thì chỉ cần focus
     secondaryWindow.focus();
   }
 });
@@ -85,7 +63,7 @@ ipcMain.on("toggle-background-removal", (event, enabled) => {
   }
 });
 
-// TikTok integration
+// Forward TikTok chat events to both windows
 function startTikTokListener() {
     const tiktokUsername = "zhongxiaomao_999";
     const connection = new TikTokLiveConnection(tiktokUsername);
@@ -95,9 +73,14 @@ function startTikTokListener() {
     }).catch(console.error);
 
     connection.on(WebcastEvent.CHAT, data => {
-        // Forward chat event to renderer
         if (mainWindow) {
             mainWindow.webContents.send("tiktok-chat", {
+                user: data.user.uniqueId,
+                comment: data.comment
+            });
+        }
+        if (secondaryWindow) {
+            secondaryWindow.webContents.send("tiktok-chat", {
                 user: data.user.uniqueId,
                 comment: data.comment
             });
@@ -107,6 +90,12 @@ function startTikTokListener() {
     connection.on(WebcastEvent.GIFT, data => {
         if (mainWindow) {
             mainWindow.webContents.send("tiktok-gift", {
+                user: data.user.uniqueId,
+                giftId: data.giftId
+            });
+        }
+        if (secondaryWindow) {
+            secondaryWindow.webContents.send("tiktok-gift", {
                 user: data.user.uniqueId,
                 giftId: data.giftId
             });
