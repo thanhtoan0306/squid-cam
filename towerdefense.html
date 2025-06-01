@@ -181,7 +181,7 @@
             }
         }
 
-        function spawnEnemy() {
+        function spawnEnemy(username, photoUrl) {
             if (gameState.enemiesSpawned >= gameState.waveEnemyCount || gameState.gameOver) return;
 
             const enemy = this.enemies.create(path[0].x, path[0].y, 'enemy');
@@ -192,8 +192,31 @@
             enemy.speed = 50 + (gameState.wave - 1) * 5;
             enemy.value = 20;
 
+            // Store TikTok username and photo
+            enemy.tiktokUser = username || "";
+            enemy.tiktokPhoto = photoUrl || "";
+
             // Health bar
             enemy.healthBar = this.add.graphics();
+
+            // Add username text above enemy
+            if (username) {
+                enemy.usernameText = this.add.text(enemy.x, enemy.y - 40, username, {
+                    fontSize: '14px',
+                    fill: '#fff',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    padding: { left: 4, right: 4, top: 2, bottom: 2 }
+                }).setOrigin(0.5);
+            }
+
+            // Add photo above enemy (if photoUrl exists)
+            if (photoUrl) {
+                this.textures.remove('enemyPhoto_' + gameState.enemiesSpawned); // Remove old texture if exists
+                this.textures.addBase64('enemyPhoto_' + gameState.enemiesSpawned, photoUrl);
+                enemy.photoImage = this.add.image(enemy.x, enemy.y - 60, 'enemyPhoto_' + gameState.enemiesSpawned)
+                    .setDisplaySize(32, 32)
+                    .setOrigin(0.5);
+            }
 
             gameState.enemiesSpawned++;
         }
@@ -206,10 +229,11 @@
 
             if (!nextPoint) {
                 // Enemy reached the end
-                gameState.health -= 10;
+                if (enemy.usernameText) enemy.usernameText.destroy();
+                if (enemy.photoImage) enemy.photoImage.destroy();
                 enemy.healthBar.destroy();
                 enemy.destroy();
-
+                gameState.health -= 10;
                 if (gameState.health <= 0) {
                     gameOver();
                 }
@@ -235,6 +259,16 @@
 
             // Update health bar
             updateHealthBar(enemy);
+
+            // Update username text and photo position
+            if (enemy.usernameText) {
+                enemy.usernameText.x = enemy.x;
+                enemy.usernameText.y = enemy.y - 40;
+            }
+            if (enemy.photoImage) {
+                enemy.photoImage.x = enemy.x;
+                enemy.photoImage.y = enemy.y - 60;
+            }
         }
 
         function updateHealthBar(enemy) {
@@ -381,12 +415,14 @@
         try {
             const { ipcRenderer } = require("electron");
             ipcRenderer.on("tiktok-chat", (event, data) => {
+                console.log('screen2', data);
+                
                 // Spawn an enemy for each TikTok chat comment
-                console.log("Received TikTok chat data screen2:", data);
-
                 if (!gameState.gameOver) {
                     const scene = game.scene.scenes[0];
-                    spawnEnemy.call(scene);
+                    // Use the first photo URL if available
+                    const photoUrl = typeof data.photo === "string" ? data.photo : "";
+                    spawnEnemy.call(scene, data.user, photoUrl);
                 }
             });
         } catch (e) {

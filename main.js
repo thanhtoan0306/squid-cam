@@ -88,7 +88,7 @@ function startTikTokListener(username) {
   tiktokConnection.on(WebcastEvent.CHAT, (data) => {
     if (mainWindow) {
       // console.log('(WebcastEvent.CHAT) Received comment:', data);
-      console.log("User:", JSON.stringify(data.user));
+      // console.log("User:", JSON.stringify(data.user));
 
       mainWindow.webContents.send("tiktok-chat", {
         user: data.user.uniqueId,
