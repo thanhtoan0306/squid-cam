@@ -161,6 +161,7 @@
       });
 
       ipcRenderer.on("tiktok-chat", (event, data) => {
+        console.log("Received TikTok chat data screen1:", data);
         const msg = document.createElement("div");
         msg.classList.add("chat-message");
         msg.innerHTML = `<strong>${data.user}:</strong> ${data.comment}`;

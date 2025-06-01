@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,11 +17,13 @@
             flex-direction: column;
             align-items: center;
         }
+
         #game-container {
             border: 3px solid #444;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,255,255,0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
         }
+
         h1 {
             margin: 0 0 20px 0;
             text-align: center;
@@ -28,10 +31,11 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 32px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
     </style>
 </head>
+
 <body>
     <h1>🏰 Tower Defense Game</h1>
     <div id="game-container"></div>
@@ -107,7 +111,7 @@
 
         function create() {
             this.scene = this;
-            
+
             // Create background grid
             for (let x = 0; x < config.width; x += 32) {
                 for (let y = 0; y < config.height; y += 32) {
@@ -133,10 +137,10 @@
             // Click handler for placing towers
             this.input.on('pointerdown', (pointer) => {
                 if (gameState.gameOver) return;
-                
+
                 const x = Math.floor(pointer.x / 32) * 32 + 16;
                 const y = Math.floor(pointer.y / 32) * 32 + 16;
-                
+
                 // Check if position is valid and player has enough gold
                 if (gameState.gold >= 50 && !getTowerAt(x, y) && !isOnPath(x, y)) {
                     createTower(this, x, y);
@@ -190,7 +194,7 @@
 
             // Health bar
             enemy.healthBar = this.add.graphics();
-            
+
             gameState.enemiesSpawned++;
         }
 
@@ -205,7 +209,7 @@
                 gameState.health -= 10;
                 enemy.healthBar.destroy();
                 enemy.destroy();
-                
+
                 if (gameState.health <= 0) {
                     gameOver();
                 }
@@ -216,9 +220,9 @@
             const dx = nextPoint.x - currentPoint.x;
             const dy = nextPoint.y - currentPoint.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
+
             enemy.pathProgress += (enemy.speed * delta) / 1000;
-            
+
             if (enemy.pathProgress >= distance) {
                 enemy.pathIndex++;
                 enemy.pathProgress = 0;
@@ -235,18 +239,18 @@
 
         function updateHealthBar(enemy) {
             enemy.healthBar.clear();
-            
+
             const barWidth = 30;
             const barHeight = 4;
             const healthPercent = enemy.health / enemy.maxHealth;
-            
+
             // Background
             enemy.healthBar.fillStyle(0x000000);
-            enemy.healthBar.fillRect(enemy.x - barWidth/2, enemy.y - 20, barWidth, barHeight);
-            
+            enemy.healthBar.fillRect(enemy.x - barWidth / 2, enemy.y - 20, barWidth, barHeight);
+
             // Health
             enemy.healthBar.fillStyle(healthPercent > 0.5 ? 0x00FF00 : healthPercent > 0.25 ? 0xFFFF00 : 0xFF0000);
-            enemy.healthBar.fillRect(enemy.x - barWidth/2, enemy.y - 20, barWidth * healthPercent, barHeight);
+            enemy.healthBar.fillRect(enemy.x - barWidth / 2, enemy.y - 20, barWidth * healthPercent, barHeight);
         }
 
         function createTower(scene, x, y) {
@@ -280,7 +284,7 @@
 
         function createBullet(scene, startX, startY, targetX, targetY, damage) {
             const bullet = scene.bullets.create(startX, startY, 'bullet');
-            
+
             const angle = Phaser.Math.Angle.Between(startX, startY, targetX, targetY);
             bullet.speed = 300;
             bullet.damage = damage;
@@ -318,7 +322,7 @@
         }
 
         function getTowerAt(x, y) {
-            return gameState.towers.find(tower => 
+            return gameState.towers.find(tower =>
                 Math.abs(tower.x - x) < 32 && Math.abs(tower.y - y) < 32
             );
         }
@@ -338,13 +342,13 @@
             const dx = x2 - x1;
             const dy = y2 - y1;
             const length = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (length === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
-            
+
             const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (length * length)));
             const projX = x1 + t * dx;
             const projY = y1 + t * dy;
-            
+
             return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
         }
 
@@ -358,9 +362,9 @@
         function gameOver() {
             gameState.gameOver = true;
             const scene = game.scene.scenes[0];
-            
+
             // Create game over text
-            const gameOverText = scene.add.text(config.width / 2, config.height / 2, 
+            const gameOverText = scene.add.text(config.width / 2, config.height / 2,
                 'GAME OVER\nWave đạt được: ' + gameState.wave + '\nNhấn F5 để chơi lại', {
                 fontSize: '32px',
                 fill: '#FF0000',
@@ -378,6 +382,8 @@
             const { ipcRenderer } = require("electron");
             ipcRenderer.on("tiktok-chat", (event, data) => {
                 // Spawn an enemy for each TikTok chat comment
+                console.log("Received TikTok chat data screen2:", data);
+
                 if (!gameState.gameOver) {
                     const scene = game.scene.scenes[0];
                     spawnEnemy.call(scene);
@@ -388,4 +394,5 @@
         }
     </script>
 </body>
+
 </html>

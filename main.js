@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const { startTikTokServer } = require('./tiktok-server');
+const { startTikTokServer } = require("./tiktok-server");
 const { TikTokLiveConnection, WebcastEvent } = require("tiktok-live-connector");
 
 let mainWindow;
@@ -66,63 +66,71 @@ ipcMain.on("toggle-background-removal", (event, enabled) => {
 
 // Forward TikTok chat events to both windows
 function startTikTokListener(username) {
-    if (tiktokConnection) {
-        tiktokConnection.disconnect();
-        tiktokConnection = null;
+  if (tiktokConnection) {
+    tiktokConnection.disconnect();
+    tiktokConnection = null;
+  }
+  if (!username) return;
+
+  tiktokConnection = new TikTokLiveConnection(username);
+
+  tiktokConnection
+    .connect()
+    .then(() => {
+      if (mainWindow) mainWindow.webContents.send("tiktok-connected");
+      console.log("Connected to TikTok live:", username);
+    })
+    .catch((err) => {
+      if (mainWindow) mainWindow.webContents.send("tiktok-disconnected");
+      console.error(err);
+    });
+
+  tiktokConnection.on(WebcastEvent.CHAT, (data) => {
+    if (mainWindow) {
+      // console.log('(WebcastEvent.CHAT) Received comment:', data);
+      console.log("User:", JSON.stringify(data.user));
+
+      mainWindow.webContents.send("tiktok-chat", {
+        user: data.user.uniqueId,
+        photo: data.user.profilePicture?.url ? [0] : "",
+        comment: data.comment,
+      });
     }
-    if (!username) return;
+    if (secondaryWindow) {
+      secondaryWindow.webContents.send("tiktok-chat", {
+        user: data.user.uniqueId,
+        photo: data.user.profilePicture?.url ? [0] : "",
+        comment: data.comment,
+      });
+    }
+  });
 
-    tiktokConnection = new TikTokLiveConnection(username);
-
-    tiktokConnection.connect().then(() => {
-        if (mainWindow) mainWindow.webContents.send("tiktok-connected");
-        console.log("Connected to TikTok live:", username);
-    }).catch(err => {
-        if (mainWindow) mainWindow.webContents.send("tiktok-disconnected");
-        console.error(err);
-    });
-
-    tiktokConnection.on(WebcastEvent.CHAT, data => {
-        if (mainWindow) {
-            mainWindow.webContents.send("tiktok-chat", {
-                user: data.user.uniqueId,
-                comment: data.comment
-            });
-        }
-        if (secondaryWindow) {
-            secondaryWindow.webContents.send("tiktok-chat", {
-                user: data.user.uniqueId,
-                comment: data.comment
-            });
-        }
-    });
-
-    tiktokConnection.on(WebcastEvent.GIFT, data => {
-        if (mainWindow) {
-            mainWindow.webContents.send("tiktok-gift", {
-                user: data.user.uniqueId,
-                giftId: data.giftId
-            });
-        }
-        if (secondaryWindow) {
-            secondaryWindow.webContents.send("tiktok-gift", {
-                user: data.user.uniqueId,
-                giftId: data.giftId
-            });
-        }
-    });
+  tiktokConnection.on(WebcastEvent.GIFT, (data) => {
+    if (mainWindow) {
+      mainWindow.webContents.send("tiktok-gift", {
+        user: data.user.uniqueId,
+        giftId: data.giftId,
+      });
+    }
+    if (secondaryWindow) {
+      secondaryWindow.webContents.send("tiktok-gift", {
+        user: data.user.uniqueId,
+        giftId: data.giftId,
+      });
+    }
+  });
 }
 
 ipcMain.on("tiktok-connect", (event, username) => {
-    startTikTokListener(username);
+  startTikTokListener(username);
 });
 ipcMain.on("tiktok-disconnect", () => {
-    if (tiktokConnection) {
-        tiktokConnection.disconnect();
-        tiktokConnection = null;
-        if (mainWindow) mainWindow.webContents.send("tiktok-disconnected");
-        console.log("Disconnected from TikTok live");
-    }
+  if (tiktokConnection) {
+    tiktokConnection.disconnect();
+    tiktokConnection = null;
+    if (mainWindow) mainWindow.webContents.send("tiktok-disconnected");
+    console.log("Disconnected from TikTok live");
+  }
 });
 
 app.whenReady().then(() => {
