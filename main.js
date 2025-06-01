@@ -133,6 +133,12 @@ ipcMain.on("tiktok-disconnect", () => {
   }
 });
 
+ipcMain.on("simulate-tiktok-chat", (event, fakeData) => {
+  if (secondaryWindow) {
+    secondaryWindow.webContents.send("tiktok-chat", fakeData);
+  }
+});
+
 app.whenReady().then(() => {
   createWindows();
   startTikTokListener(); // Start TikTok listener
