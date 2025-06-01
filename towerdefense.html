@@ -184,7 +184,7 @@
         function spawnEnemy(username, photoUrl) {
             if (gameState.enemiesSpawned >= gameState.waveEnemyCount || gameState.gameOver) return;
 
-            const enemy = this.enemies.create(path[0].x, path[0].y, 'enemy');
+            const enemy = this.enemies.create(path[0].x, path[0].y, null); // No texture for now
             enemy.pathIndex = 0;
             enemy.pathProgress = 0;
             enemy.health = 50 + (gameState.wave - 1) * 10;
@@ -209,30 +209,38 @@
                 }).setOrigin(0.5);
             }
 
-            // Add photo above enemy (if photoUrl exists)
-            // data: "https://p9-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/c59f51ccab988fdb57ddbccb5d94f5d1~tplv-tiktokx-cropcenter:100:100.webp?dr=14579&refresh_token=4aea2abd&x-expires=1748941200&x-signature=E%2B6E%2FFpP8z8T2On19xjff9jijpU%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=fdd36af4&idc=my"
-            
+            // Replace enemy sprite with photo if photoUrl exists
             if (photoUrl) {
                 const key = 'enemyPhoto_' + gameState.enemiesSpawned;
-                // Check if texture already exists
                 if (!this.textures.exists(key)) {
                     this.load.image(key, photoUrl);
                     this.load.once('complete', () => {
-                        enemy.photoImage = this.add.image(enemy.x, enemy.y - 60, key)
+                        // Remove the old sprite if it exists
+                        if (enemy.photoImage) enemy.photoImage.destroy();
+                        // Add the photo as the main enemy sprite
+                        enemy.photoImage = this.add.image(enemy.x, enemy.y, key)
                             .setDisplaySize(32, 32)
                             .setOrigin(0.5);
+                        // Hide the default enemy sprite (if any)
+                        enemy.setVisible(false);
                     });
                     this.load.start();
                 } else {
-                    enemy.photoImage = this.add.image(enemy.x, enemy.y - 60, key)
+                    if (enemy.photoImage) enemy.photoImage.destroy();
+                    enemy.photoImage = this.add.image(enemy.x, enemy.y, key)
                         .setDisplaySize(32, 32)
                         .setOrigin(0.5);
+                    enemy.setVisible(false);
                 }
+            } else {
+                // If no photo, fallback to default enemy sprite
+                enemy.setTexture('enemy');
             }
 
             gameState.enemiesSpawned++;
         }
 
+        // In updateEnemy, update the photo position instead of the sprite:
         function updateEnemy(enemy, delta) {
             if (!enemy.active) return;
 
@@ -240,7 +248,6 @@
             const nextPoint = path[enemy.pathIndex + 1];
 
             if (!nextPoint) {
-                // Enemy reached the end
                 if (enemy.usernameText) enemy.usernameText.destroy();
                 if (enemy.photoImage) enemy.photoImage.destroy();
                 enemy.healthBar.destroy();
@@ -279,7 +286,7 @@
             }
             if (enemy.photoImage) {
                 enemy.photoImage.x = enemy.x;
-                enemy.photoImage.y = enemy.y - 60;
+                enemy.photoImage.y = enemy.y;
             }
         }
 
