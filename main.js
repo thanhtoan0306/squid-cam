@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { startTikTokServer } = require('./tiktok-server');
+const { TikTokLiveConnection, WebcastEvent } = require("tiktok-live-connector");
+
 let mainWindow;
 let secondaryWindow;
 
@@ -83,8 +85,38 @@ ipcMain.on("toggle-background-removal", (event, enabled) => {
   }
 });
 
+// TikTok integration
+function startTikTokListener() {
+    const tiktokUsername = "zhongxiaomao_999";
+    const connection = new TikTokLiveConnection(tiktokUsername);
+
+    connection.connect().then(() => {
+        console.log("Connected to TikTok live");
+    }).catch(console.error);
+
+    connection.on(WebcastEvent.CHAT, data => {
+        // Forward chat event to renderer
+        if (mainWindow) {
+            mainWindow.webContents.send("tiktok-chat", {
+                user: data.user.uniqueId,
+                comment: data.comment
+            });
+        }
+    });
+
+    connection.on(WebcastEvent.GIFT, data => {
+        if (mainWindow) {
+            mainWindow.webContents.send("tiktok-gift", {
+                user: data.user.uniqueId,
+                giftId: data.giftId
+            });
+        }
+    });
+}
+
 app.whenReady().then(() => {
   createWindows();
+  startTikTokListener(); // Start TikTok listener
 
   app.on("activate", () => {
     // Đảm bảo tạo lại cửa sổ nếu không có cửa sổ nào mở (macOS)

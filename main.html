@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>Main Window</title>
+    <title>TikTok Live Control</title>
     <meta
       http-equiv="Content-Security-Policy"
       content="script-src 'self' 'unsafe-inline';"
@@ -10,162 +10,49 @@
     <style>
       body {
         font-family: sans-serif;
-        margin: 0;
+        background: #f0f0f0;
         display: flex;
         flex-direction: column;
-        height: 100vh;
-        background-color: #f0f0f0; /* Màu nền nhạt */
-      }
-      #video-preview {
-        flex-grow: 1; /* Chiếm phần lớn không gian */
-        background-color: #333; /* Màu nền tối cho khu vực video */
-        display: flex;
+        align-items: center;
         justify-content: center;
-        align-items: center;
-        color: white;
-        font-size: 1.5em;
-        /* Trong ứng dụng thực tế, bạn sẽ đặt thẻ <video> ở đây */
-        border-bottom: 1px solid #ccc;
+        height: 100vh;
       }
-      #main-controls {
-        padding: 10px;
-        background-color: #e0e0e0; /* Nền sáng hơn cho control */
-        display: flex;
-        justify-content: space-between; /* Phân bố các nút */
-        align-items: center;
-      }
-      #left-controls button,
-      #right-controls button {
-        padding: 8px 15px;
-        margin: 0 5px;
+      #tiktok-btn {
+        padding: 15px 30px;
+        font-size: 1.2em;
+        background: #ff0050;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
         cursor: pointer;
       }
-      #start-stream-button {
-        background-color: #ffcc00; /* Màu vàng giống ảnh */
-        border: none;
-        font-weight: bold;
-      }
-      #applied-effect {
-        margin-top: 10px;
-        font-style: italic;
-        color: #555;
-        text-align: center;
+      #tiktok-btn.off {
+        background: #888;
       }
     </style>
   </head>
   <body>
-    <div id="video-preview">
-      Video Preview Area
-      <div id="applied-effect">No effect applied</div>
-    </div>
-
-    <div id="main-controls">
-      <div id="left-controls">
-        <button>Camera</button>
-        <button>Capture</button>
-        <button>Multimedia</button>
-        <button>RTMP</button>
-      </div>
-      <div id="right-controls">
-        <button id="start-stream-button">Start Streaming</button>
-      </div>
-    </div>
-    <!-- Nút mở cửa sổ secondary -->
-    <button id="open-secondary-btn">Mở cửa sổ hiệu ứng phụ</button>
-    <button id="mirror-secondary-btn">Mirror Secondary Video</button>
-
-    <!-- Effects section -->
-    <div class="control-section">
-      <h4>Effects</h4>
-      <div class="button-grid effect-buttons">
-        <button data-effect="Blur">Blur</button>
-        <button data-effect="Pixelate">Pixel</button>
-        <button data-effect="Sepia">Sepia</button>
-        <button data-effect="Invert">Invert</button>
-        <button id="toggle-background-btn">Toggle Background</button>
-      </div>
-    </div>
-
-    <!-- Sound Animation section -->
-    <div class="control-section">
-      <h4>Sound Animation 🔊</h4>
-      <div class="button-grid sound-buttons">
-        <button data-sound="Applause">👏</button>
-        <button data-sound="ColdWind">💨</button>
-        <button data-sound="Crow">🐦</button>
-        <button data-sound="Laugh">😂</button>
-      </div>
-    </div>
-
+    <button id="tiktok-btn" class="off">Connect TikTok Live</button>
     <script>
       const { ipcRenderer } = require("electron");
-      window.ipcRenderer = ipcRenderer; // Đảm bảo có thể truy cập từ mọi nơi
+      let connected = false;
+      const tiktokBtn = document.getElementById("tiktok-btn");
 
-      const appliedEffectDiv = document.getElementById("applied-effect");
-
-      // Lắng nghe thông điệp 'update-effect' từ main process
-      ipcRenderer.on("update-effect", (event, effectName) => {
-        console.log(`Main window received effect: ${effectName}`);
-        // Hiển thị tên hiệu ứng đang được áp dụng
-        appliedEffectDiv.textContent = `Applied Effect: ${effectName}`;
-        // Gọi hàm thực tế để áp dụng hiệu ứng lên video ở đây
-        // applyEffectToVideo(effectName);
+      tiktokBtn.addEventListener("click", () => {
+        if (!connected) {
+          ipcRenderer.send("tiktok-connect");
+          tiktokBtn.textContent = "Disconnect TikTok Live";
+          tiktokBtn.classList.remove("off");
+        } else {
+          ipcRenderer.send("tiktok-disconnect");
+          tiktokBtn.textContent = "Connect TikTok Live";
+          tiktokBtn.classList.add("off");
+        }
+        connected = !connected;
       });
 
-      // Ví dụ hàm giả định để áp dụng hiệu ứng
-      // function applyEffectToVideo(effectName) {
-      //     console.log(`Function to apply ${effectName} would run here.`);
-      // }
-      // Lấy tất cả các nút hiệu ứng và âm thanh
-      document.querySelectorAll(".effect-buttons button").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const effect = btn.getAttribute("data-effect");
-          ipcRenderer.send("apply-effect", effect);
-        });
-      });
-      document.querySelectorAll(".sound-buttons button").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const sound = btn.getAttribute("data-sound");
-          ipcRenderer.send("play-sound", sound);
-        });
-      });
-      document
-        .getElementById("mirror-secondary-btn")
-        .addEventListener("click", () => {
-          console.log("Mirror secondary video");
-          ipcRenderer.send("toggle-mirror-secondary");
-        });
-
-      // Nút mở cửa sổ secondary
-      document
-        .getElementById("open-secondary-btn")
-        .addEventListener("click", () => {
-          console.log("Open secondary window");
-          ipcRenderer.send("open-secondary-window");
-        });
-
-      const toggleBackgroundBtn = document.getElementById(
-        "toggle-background-btn"
-      );
-      let isBackgroundRemovalEnabled = true;
-
-      // Toggle background removal
-      toggleBackgroundBtn.addEventListener("click", () => {
-        isBackgroundRemovalEnabled = !isBackgroundRemovalEnabled;
-
-        // Send message to main process to toggle background removal
-        ipcRenderer.send(
-          "toggle-background-removal",
-          isBackgroundRemovalEnabled
-        );
-
-        // Update button text and style
-        toggleBackgroundBtn.textContent = isBackgroundRemovalEnabled
-          ? "Hide Background"
-          : "Show Background";
-        toggleBackgroundBtn.style.backgroundColor = isBackgroundRemovalEnabled
-          ? "#4CAF50"
-          : "#FF5722";
+      ipcRenderer.on("tiktok-chat", (event, data) => {
+        console.log("TikTok Chat:", data.user, data.comment);
       });
     </script>
   </body>
