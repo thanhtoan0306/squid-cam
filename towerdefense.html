@@ -210,12 +210,24 @@
             }
 
             // Add photo above enemy (if photoUrl exists)
+            // data: "https://p9-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/c59f51ccab988fdb57ddbccb5d94f5d1~tplv-tiktokx-cropcenter:100:100.webp?dr=14579&refresh_token=4aea2abd&x-expires=1748941200&x-signature=E%2B6E%2FFpP8z8T2On19xjff9jijpU%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=fdd36af4&idc=my"
+            
             if (photoUrl) {
-                this.textures.remove('enemyPhoto_' + gameState.enemiesSpawned); // Remove old texture if exists
-                this.textures.addBase64('enemyPhoto_' + gameState.enemiesSpawned, photoUrl);
-                enemy.photoImage = this.add.image(enemy.x, enemy.y - 60, 'enemyPhoto_' + gameState.enemiesSpawned)
-                    .setDisplaySize(32, 32)
-                    .setOrigin(0.5);
+                const key = 'enemyPhoto_' + gameState.enemiesSpawned;
+                // Check if texture already exists
+                if (!this.textures.exists(key)) {
+                    this.load.image(key, photoUrl);
+                    this.load.once('complete', () => {
+                        enemy.photoImage = this.add.image(enemy.x, enemy.y - 60, key)
+                            .setDisplaySize(32, 32)
+                            .setOrigin(0.5);
+                    });
+                    this.load.start();
+                } else {
+                    enemy.photoImage = this.add.image(enemy.x, enemy.y - 60, key)
+                        .setDisplaySize(32, 32)
+                        .setOrigin(0.5);
+                }
             }
 
             gameState.enemiesSpawned++;

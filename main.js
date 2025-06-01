@@ -43,7 +43,7 @@ ipcMain.on("open-secondary-window", () => {
         nodeIntegration: true,
         contextIsolation: false,
       },
-      autoHideMenuBar: true,
+      // autoHideMenuBar: true,
     });
     secondaryWindow.loadFile("towerdefense.html");
     // secondaryWindow.webContents.openDevTools({ mode: "detach" }); // Optional: DevTools
@@ -99,7 +99,7 @@ function startTikTokListener(username) {
     if (secondaryWindow) {
       secondaryWindow.webContents.send("tiktok-chat", {
         user: data.user.uniqueId,
-        photo: data.user.profilePicture?.url ? [0] : "",
+        photo: data.user.profilePicture?.url?.[0],
         comment: data.comment,
       });
     }
