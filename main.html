@@ -17,6 +17,14 @@
         justify-content: center;
         height: 100vh;
       }
+      #username-input {
+        padding: 10px;
+        font-size: 1.1em;
+        margin-bottom: 20px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        width: 250px;
+      }
       #tiktok-btn,
       #open-secondary-btn {
         padding: 15px 30px;
@@ -34,28 +42,118 @@
       #open-secondary-btn {
         background: #0099ff;
       }
+      #status-dot {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #888;
+        margin-left: 10px;
+        vertical-align: middle;
+        border: 2px solid #fff;
+        box-shadow: 0 0 2px #0002;
+        transition: background 0.2s;
+      }
+      #status-dot.active {
+        background: #2ecc40;
+      }
+      #loading-spinner {
+        display: none;
+        margin-left: 10px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #ff0050;
+        border-radius: 50%;
+        width: 16px;
+        height: 16px;
+        animation: spin 1s linear infinite;
+        vertical-align: middle;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      #chat-box {
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        width: 400px;
+        max-height: 200px;
+        overflow-y: auto;
+        background: #111;
+        color: #fff;
+        margin-top: 20px;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 16px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .chat-message {
+        margin-bottom: 10px;
+      }
+      .chat-message strong {
+        color: #ff0050;
+      }
     </style>
   </head>
   <body>
-    <button id="tiktok-btn" class="off">Connect TikTok Live</button>
+    <input
+      id="username-input"
+      type="text"
+      placeholder="Enter TikTok username..."
+    />
+    <button id="tiktok-btn" class="off">
+      Connect TikTok Live
+      <span id="status-dot"></span>
+      <span id="loading-spinner"></span>
+    </button>
     <button id="open-secondary-btn">Open Tower Defense</button>
+    <div id="chat-box"></div>
     <script>
       const { ipcRenderer } = require("electron");
       let connected = false;
       const tiktokBtn = document.getElementById("tiktok-btn");
       const openSecondaryBtn = document.getElementById("open-secondary-btn");
+      const usernameInput = document.getElementById("username-input");
+      const statusDot = document.getElementById("status-dot");
+      const loadingSpinner = document.getElementById("loading-spinner");
+      const chatBox = document.getElementById("chat-box");
 
       tiktokBtn.addEventListener("click", () => {
+        const username = usernameInput.value.trim();
         if (!connected) {
-          ipcRenderer.send("tiktok-connect");
+          if (!username) {
+            alert("Please enter a TikTok username!");
+            return;
+          }
+          loadingSpinner.style.display = "inline-block";
+          ipcRenderer.send("tiktok-connect", username);
           tiktokBtn.textContent = "Disconnect TikTok Live";
+          tiktokBtn.appendChild(statusDot);
+          tiktokBtn.appendChild(loadingSpinner);
           tiktokBtn.classList.remove("off");
         } else {
           ipcRenderer.send("tiktok-disconnect");
           tiktokBtn.textContent = "Connect TikTok Live";
+          tiktokBtn.appendChild(statusDot);
+          tiktokBtn.appendChild(loadingSpinner);
           tiktokBtn.classList.add("off");
+          statusDot.classList.remove("active");
         }
         connected = !connected;
+      });
+
+      // Listen for connection status from main process
+      ipcRenderer.on("tiktok-connected", () => {
+        loadingSpinner.style.display = "none";
+        statusDot.classList.add("active");
+      });
+      ipcRenderer.on("tiktok-disconnected", () => {
+        loadingSpinner.style.display = "none";
+        statusDot.classList.remove("active");
       });
 
       openSecondaryBtn.addEventListener("click", () => {
@@ -63,7 +161,11 @@
       });
 
       ipcRenderer.on("tiktok-chat", (event, data) => {
-        console.log("TikTok Chat:", data.user, data.comment);
+        const msg = document.createElement("div");
+        msg.classList.add("chat-message");
+        msg.innerHTML = `<strong>${data.user}:</strong> ${data.comment}`;
+        chatBox.appendChild(msg);
+        chatBox.scrollTop = chatBox.scrollHeight;
       });
     </script>
   </body>

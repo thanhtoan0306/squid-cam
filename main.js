@@ -5,6 +5,7 @@ const { TikTokLiveConnection, WebcastEvent } = require("tiktok-live-connector");
 
 let mainWindow;
 let secondaryWindow;
+let tiktokConnection; // Declare tiktokConnection here
 
 function createWindows() {
   // Tạo cửa sổ chính
@@ -64,15 +65,24 @@ ipcMain.on("toggle-background-removal", (event, enabled) => {
 });
 
 // Forward TikTok chat events to both windows
-function startTikTokListener() {
-    const tiktokUsername = "zhongxiaomao_999";
-    const connection = new TikTokLiveConnection(tiktokUsername);
+function startTikTokListener(username) {
+    if (tiktokConnection) {
+        tiktokConnection.disconnect();
+        tiktokConnection = null;
+    }
+    if (!username) return;
 
-    connection.connect().then(() => {
-        console.log("Connected to TikTok live");
-    }).catch(console.error);
+    tiktokConnection = new TikTokLiveConnection(username);
 
-    connection.on(WebcastEvent.CHAT, data => {
+    tiktokConnection.connect().then(() => {
+        if (mainWindow) mainWindow.webContents.send("tiktok-connected");
+        console.log("Connected to TikTok live:", username);
+    }).catch(err => {
+        if (mainWindow) mainWindow.webContents.send("tiktok-disconnected");
+        console.error(err);
+    });
+
+    tiktokConnection.on(WebcastEvent.CHAT, data => {
         if (mainWindow) {
             mainWindow.webContents.send("tiktok-chat", {
                 user: data.user.uniqueId,
@@ -87,7 +97,7 @@ function startTikTokListener() {
         }
     });
 
-    connection.on(WebcastEvent.GIFT, data => {
+    tiktokConnection.on(WebcastEvent.GIFT, data => {
         if (mainWindow) {
             mainWindow.webContents.send("tiktok-gift", {
                 user: data.user.uniqueId,
@@ -102,6 +112,18 @@ function startTikTokListener() {
         }
     });
 }
+
+ipcMain.on("tiktok-connect", (event, username) => {
+    startTikTokListener(username);
+});
+ipcMain.on("tiktok-disconnect", () => {
+    if (tiktokConnection) {
+        tiktokConnection.disconnect();
+        tiktokConnection = null;
+        if (mainWindow) mainWindow.webContents.send("tiktok-disconnected");
+        console.log("Disconnected from TikTok live");
+    }
+});
 
 app.whenReady().then(() => {
   createWindows();

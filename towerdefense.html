@@ -21,35 +21,6 @@
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,255,255,0.3);
         }
-        #ui {
-            margin-top: 20px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            background: rgba(0,0,0,0.7);
-            padding: 15px;
-            border-radius: 10px;
-            border: 2px solid #444;
-        }
-        .stat {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .stat-icon {
-            width: 30px;
-            height: 30px;
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-        }
-        .gold-icon { background: linear-gradient(45deg, #feca57, #ff9ff3); }
-        .wave-icon { background: linear-gradient(45deg, #48dbfb, #0abde3); }
         h1 {
             margin: 0 0 20px 0;
             text-align: center;
@@ -64,22 +35,6 @@
 <body>
     <h1>🏰 Tower Defense Game</h1>
     <div id="game-container"></div>
-    <div id="ui">
-        <div class="stat">
-            <div class="stat-icon">❤️</div>
-            <span id="health">Máu: 100</span>
-        </div>
-        <div class="stat">
-            <div class="stat-icon gold-icon">💰</div>
-            <span id="gold">Vàng: 100</span>
-        </div>
-        <div class="stat">
-            <div class="stat-icon wave-icon">🌊</div>
-            <span id="wave">Wave: 1</span>
-        </div>
-    </div>
-    <div id="chat-box" style="width: 400px; max-height: 200px; overflow-y: auto; background: #111; color: #fff; margin-top: 20px; border-radius: 8px; padding: 10px; font-size: 16px;"></div>
-
     <script>
         // Game variables
         let gameState = {
@@ -186,19 +141,16 @@
                 if (gameState.gold >= 50 && !getTowerAt(x, y) && !isOnPath(x, y)) {
                     createTower(this, x, y);
                     gameState.gold -= 50;
-                    updateUI();
                 }
             });
 
             // Start spawning enemies
-            this.time.addEvent({
-                delay: 1000,
-                callback: spawnEnemy,
-                callbackScope: this,
-                loop: true
-            });
-
-            updateUI();
+            // this.time.addEvent({
+            //     delay: 1000,
+            //     callback: spawnEnemy,
+            //     callbackScope: this,
+            //     loop: true
+            // });
         }
 
         function update(time, delta) {
@@ -253,7 +205,6 @@
                 gameState.health -= 10;
                 enemy.healthBar.destroy();
                 enemy.destroy();
-                updateUI();
                 
                 if (gameState.health <= 0) {
                     gameOver();
@@ -356,7 +307,6 @@
                         gameState.gold += enemy.value;
                         enemy.healthBar.destroy();
                         enemy.destroy();
-                        updateUI();
                     }
                 }
             });
@@ -403,7 +353,6 @@
             gameState.waveEnemyCount = 5 + gameState.wave * 2;
             gameState.enemiesSpawned = 0;
             gameState.gold += 50;
-            updateUI();
         }
 
         function gameOver() {
@@ -421,24 +370,18 @@
             }).setOrigin(0.5);
         }
 
-        function updateUI() {
-            document.getElementById('health').textContent = 'Máu: ' + gameState.health;
-            document.getElementById('gold').textContent = 'Vàng: ' + gameState.gold;
-            document.getElementById('wave').textContent = 'Wave: ' + gameState.wave;
-        }
-
         // Start the game
         const game = new Phaser.Game(config);
 
         // TikTok chat integration
         try {
             const { ipcRenderer } = require("electron");
-            const chatBox = document.getElementById("chat-box");
             ipcRenderer.on("tiktok-chat", (event, data) => {
-                const msg = document.createElement("div");
-                msg.textContent = `${data.user}: ${data.comment}`;
-                chatBox.appendChild(msg);
-                chatBox.scrollTop = chatBox.scrollHeight;
+                // Spawn an enemy for each TikTok chat comment
+                if (!gameState.gameOver) {
+                    const scene = game.scene.scenes[0];
+                    spawnEnemy.call(scene);
+                }
             });
         } catch (e) {
             // Not running in Electron, ignore
