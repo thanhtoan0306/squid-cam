@@ -86,37 +86,76 @@ function startTikTokListener(username) {
     });
 
   tiktokConnection.on(WebcastEvent.CHAT, (data) => {
+    const user = {
+      user: data.user.uniqueId,
+      photo: data.user.profilePicture?.url ? [0] : "",
+      comment: data.comment,
+    };
     if (mainWindow) {
       // console.log('(WebcastEvent.CHAT) Received comment:', data);
       // console.log("User:", JSON.stringify(data.user));
 
-      mainWindow.webContents.send("tiktok-chat", {
-        user: data.user.uniqueId,
-        photo: data.user.profilePicture?.url ? [0] : "",
-        comment: data.comment,
-      });
+      mainWindow.webContents.send("tiktok-chat", user);
     }
     if (secondaryWindow) {
-      secondaryWindow.webContents.send("tiktok-chat", {
-        user: data.user.uniqueId,
-        photo: data.user.profilePicture?.url?.[0],
-        comment: data.comment,
-      });
+      secondaryWindow.webContents.send("tiktok-chat", user);
     }
   });
 
   tiktokConnection.on(WebcastEvent.GIFT, (data) => {
+    console.log("[TikTok GIFT]", JSON.stringify(data));
+    const user = {
+      user: data.user.uniqueId,
+      photo: data.user.profilePicture?.url ? [0] : "",
+    };
     if (mainWindow) {
-      mainWindow.webContents.send("tiktok-gift", {
-        user: data.user.uniqueId,
-        giftId: data.giftId,
-      });
+      mainWindow.webContents.send("tiktok-gift", user);
     }
     if (secondaryWindow) {
-      secondaryWindow.webContents.send("tiktok-gift", {
-        user: data.user.uniqueId,
-        giftId: data.giftId,
-      });
+      secondaryWindow.webContents.send("tiktok-gift", user);
+    }
+  });
+
+  tiktokConnection.on(WebcastEvent.LIKE, (data) => {
+    console.log("[TikTok LIKE]", JSON.stringify(data));
+    const user = {
+      user: data.user.uniqueId,
+      photo: data.user.profilePicture?.url ? [0] : "",
+    };E
+    if (mainWindow) {
+      mainWindow.webContents.send("tiktok-like", user);
+    }
+    if (secondaryWindow) {
+      secondaryWindow.webContents.send("tiktok-like", user);
+    }
+  });
+
+  tiktokConnection.on(WebcastEvent.MEMBER, (data) => {
+    console.log("[TikTok MEMBER]", JSON.stringify(data));
+
+    if (mainWindow) {
+      mainWindow.webContents.send("tiktok-member", data);
+    }
+    if (secondaryWindow) {
+      secondaryWindow.webContents.send("tiktok-member", data);
+    }
+  });
+
+  tiktokConnection.on(WebcastEvent.SHARE, (data) => {
+    if (mainWindow) {
+      mainWindow.webContents.send("tiktok-share", data);
+    }
+    if (secondaryWindow) {
+      secondaryWindow.webContents.send("tiktok-share", data);
+    }
+  });
+
+  tiktokConnection.on(WebcastEvent.FOLLOW, (data) => {
+    if (mainWindow) {
+      mainWindow.webContents.send("tiktok-follow", data);
+    }
+    if (secondaryWindow) {
+      secondaryWindow.webContents.send("tiktok-follow", data);
     }
   });
 }
