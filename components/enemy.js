@@ -1,4 +1,4 @@
-function updateHealthBar(enemy) {
+export function updateHealthBar(enemy) {
   enemy.healthBar.clear();
 
   const barWidth = 30;
