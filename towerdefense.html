@@ -66,7 +66,7 @@
         },
       };
 
-      const CELL_SIZE = 10; // 700px / 10 cells = 70px per cell
+      const CELL_SIZE = 70; // 700px / 10 cells = 70px per cell
 
       // Path for enemies to follow (adjusted for 500x500)
       const path = [
@@ -132,14 +132,13 @@
 
         // Draw path
         const graphics = this.add.graphics();
-        graphics.lineStyle(10, 0x90ee90); // Path width is now 10px
+        graphics.lineStyle(CELL_SIZE, 0x90ee90); // Path width is now CELL_SIZE (70px)
         graphics.beginPath();
         graphics.moveTo(path[0].x, path[0].y);
         for (let i = 1; i < path.length; i++) {
           graphics.lineTo(path[i].x, path[i].y);
         }
         graphics.strokePath();
-
         // Groups for game objects
         this.enemies = this.add.group();
         this.towers = this.add.group();
@@ -448,7 +447,7 @@
       }
 
       function isOnPath(x, y) {
-        // Simple check if position is too close to path
+        // Now, since path is CELL_SIZE wide, use CELL_SIZE/2 for collision
         for (let i = 0; i < path.length - 1; i++) {
           const start = path[i];
           const end = path[i + 1];
@@ -460,7 +459,7 @@
             end.x,
             end.y
           );
-          if (distance < 40) return true;
+          if (distance < CELL_SIZE / 2) return true;
         }
         return false;
       }
