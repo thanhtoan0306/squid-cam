@@ -86,11 +86,13 @@
 
       function preload() {
         // Create simple colored rectangles as sprites
-        this.add
-          .graphics()
-          .fillStyle(0x8b4513)
-          .fillRect(0, 0, CELL_SIZE, CELL_SIZE)
-          .generateTexture("tower", CELL_SIZE, CELL_SIZE);
+        // this.add
+        //   .graphics()
+        //   .fillStyle(0x8b4513)
+        //   .fillRect(0, 0, CELL_SIZE, CELL_SIZE)
+        //   .generateTexture("tower", CELL_SIZE, CELL_SIZE);
+
+        // Load the new tower image
 
         this.add
           .graphics()
@@ -111,6 +113,7 @@
           .generateTexture("grass", CELL_SIZE, CELL_SIZE);
 
         this.load.image("ice_enemy", "public/assets/enemy1.png"); // Add this line
+        this.load.image("tower", "public/assets/tower1.png");
       }
 
       function create() {
@@ -305,6 +308,7 @@
 
       function createTower(scene, x, y) {
         const tower = scene.towers.create(x, y, "tower");
+        tower.setDisplaySize(CELL_SIZE, CELL_SIZE);
         tower.range = 100;
         tower.damage = 25;
         tower.fireRate = 500; // milliseconds
