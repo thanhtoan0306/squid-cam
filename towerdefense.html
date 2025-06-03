@@ -111,6 +111,8 @@
           .fillStyle(0x654321)
           .fillRect(0, 0, CELL_SIZE, CELL_SIZE)
           .generateTexture("grass", CELL_SIZE, CELL_SIZE);
+
+        this.load.image("ice_enemy", "public/assets/enemy1.png"); // Add this line
       }
 
       function create() {
@@ -187,7 +189,7 @@
         )
           return;
 
-        const enemy = this.enemies.create(path[0].x, path[0].y, null); // No texture for now
+        const enemy = this.enemies.create(path[0].x, path[0].y, "ice_enemy"); // Use "ice_enemy" as texture
         enemy.pathIndex = 0;
         enemy.pathProgress = 0;
         enemy.health = 50 + (gameState.wave - 1) * 10;
@@ -224,8 +226,8 @@
               if (enemy.photoImage) enemy.photoImage.destroy();
               // Add the photo as the main enemy sprite
               enemy.photoImage = this.add
-                .image(enemy.x, enemy.y, key)
-                .setDisplaySize(32, 32)
+                .image(enemy.x, enemy.y, "ice_enemy")
+                .setDisplaySize(CELL_SIZE, CELL_SIZE)
                 .setOrigin(0.5);
               // Hide the default enemy sprite (if any)
               enemy.setVisible(false);
