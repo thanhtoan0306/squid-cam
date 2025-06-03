@@ -1,5 +1,5 @@
-require('electron-reload')(__dirname, {
-  electron: require(`${__dirname}/node_modules/electron`)
+require("electron-reload")(__dirname, {
+  electron: require(`${__dirname}/node_modules/electron`),
 });
 
 const { app, BrowserWindow, ipcMain } = require("electron");
@@ -125,7 +125,8 @@ function startTikTokListener(username) {
     const user = {
       user: data.user.uniqueId,
       photo: data.user.profilePicture?.url ? [0] : "",
-    };E
+    };
+    E;
     if (mainWindow) {
       mainWindow.webContents.send("tiktok-like", user);
     }
@@ -185,6 +186,12 @@ ipcMain.on("simulate-tiktok-chat", (event, fakeData) => {
 ipcMain.on("toggle-grid", () => {
   if (secondaryWindow) {
     secondaryWindow.webContents.send("toggle-grid");
+  }
+});
+
+ipcMain.on("clear-all-towers", () => {
+  if (secondaryWindow) {
+    secondaryWindow.webContents.send("clear-all-towers");
   }
 });
 

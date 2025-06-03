@@ -520,6 +520,13 @@
           }
         });
 
+        ipcRenderer.on("clear-all-towers", () => {
+          const scene = game.scene.scenes[0];
+          scene.towers.clear(true, true); // Remove all tower sprites
+          // If you keep a gameState.towers array, clear it too:
+          if (gameState.towers) gameState.towers = [];
+        });
+
         // Grid toggle integration
         ipcRenderer.on("toggle-grid", () => {
           console.log("Toggle grid received");

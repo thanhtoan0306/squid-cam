@@ -117,6 +117,9 @@
     <button id="toggle-grid-btn" style="background: #0099ff">
       Toggle 10x10 Grid
     </button>
+    <button id="clear-towers-btn" style="background: #ff9900">
+      Clear All Towers
+    </button>
     <div id="chat-box"></div>
     <script>
       const { ipcRenderer } = require("electron");
@@ -189,6 +192,11 @@
 
       toggleGridBtn.addEventListener("click", () => {
         ipcRenderer.send("toggle-grid");
+      });
+
+      const clearTowersBtn = document.getElementById("clear-towers-btn");
+      clearTowersBtn.addEventListener("click", () => {
+        ipcRenderer.send("clear-all-towers");
       });
     </script>
   </body>
