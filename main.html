@@ -111,8 +111,12 @@
       <span id="loading-spinner"></span>
     </button>
     <button id="open-secondary-btn">Open Tower Defense</button>
-    <button id="simulate-chat-btn" style="background:#2ecc40;">Simulate TikTok Chat</button>
-    <button id="toggle-grid-btn" style="background:#0099ff;">Toggle 10x10 Grid</button>
+    <button id="simulate-chat-btn" style="background: #2ecc40">
+      Simulate TikTok Chat
+    </button>
+    <button id="toggle-grid-btn" style="background: #0099ff">
+      Toggle 10x10 Grid
+    </button>
     <div id="chat-box"></div>
     <script>
       const { ipcRenderer } = require("electron");
@@ -124,7 +128,7 @@
       const statusDot = document.getElementById("status-dot");
       const loadingSpinner = document.getElementById("loading-spinner");
       const chatBox = document.getElementById("chat-box");
-      
+      const toggleGridBtn = document.getElementById("toggle-grid-btn");
 
       tiktokBtn.addEventListener("click", () => {
         const username = usernameInput.value.trim();
@@ -176,10 +180,15 @@
       simulateChatBtn.addEventListener("click", () => {
         const fakeData = {
           user: "SimUser",
-          photo: "https://p9-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/77bf699aed38ccef1853d8a7c0d00708~tplv-tiktokx-cropcenter:100:100.webp?dr=14579&refresh_token=508830fb&x-expires=1748937600&x-signature=GDu6Vzxfpohg7bElTwyPBNZYT6Q%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=fdd36af4&idc=my", // or a test image URL if you want
-          comment: "This is a simulated TikTok chat message!"
+          photo:
+            "https://p9-sign-sg.tiktokcdn.com/tos-alisg-avt-0068/77bf699aed38ccef1853d8a7c0d00708~tplv-tiktokx-cropcenter:100:100.webp?dr=14579&refresh_token=508830fb&x-expires=1748937600&x-signature=GDu6Vzxfpohg7bElTwyPBNZYT6Q%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=fdd36af4&idc=my", // or a test image URL if you want
+          comment: "This is a simulated TikTok chat message!",
         };
         ipcRenderer.send("simulate-tiktok-chat", fakeData);
+      });
+
+      toggleGridBtn.addEventListener("click", () => {
+        ipcRenderer.send("toggle-grid");
       });
     </script>
   </body>
