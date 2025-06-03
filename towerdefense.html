@@ -183,13 +183,6 @@
       function spawnEnemy(username, photoUrl) {
         if (gameState.gameOver) return; // Only limit by game over
 
-        // Remove enemy count checks
-        // if (
-        //   gameState.enemiesSpawned >= gameState.waveEnemyCount ||
-        //   gameState.gameOver
-        // )
-        //   return;
-
         const enemy = this.enemies.create(path[0].x, path[0].y, "ice_enemy");
         enemy.pathIndex = 0;
         enemy.pathProgress = 0;
@@ -219,15 +212,20 @@
 
         // Replace enemy sprite with photo if photoUrl exists
         if (photoUrl) {
-          const key = "enemyPhoto_" + gameState.enemiesSpawned;
+          const key = "enemyPhoto_" + Date.now() + Math.random(); // Use a unique key for each photo
           if (!this.textures.exists(key)) {
             this.load.image(key, photoUrl);
             this.load.once("complete", () => {
               // Remove the old sprite if it exists
               if (enemy.photoImage) enemy.photoImage.destroy();
-              // Add the photo as the main enemy sprite
-              enemy.photoImage = this.add
+              // Add the base ice_enemy sprite
+              enemy.baseSprite = this.add
                 .image(enemy.x, enemy.y, "ice_enemy")
+                .setDisplaySize(CELL_SIZE, CELL_SIZE)
+                .setOrigin(0.5);
+              // Add the photo overlay on top
+              enemy.photoImage = this.add
+                .image(enemy.x, enemy.y, key)
                 .setDisplaySize(CELL_SIZE, CELL_SIZE)
                 .setOrigin(0.5);
               // Hide the default enemy sprite (if any)
@@ -236,9 +234,13 @@
             this.load.start();
           } else {
             if (enemy.photoImage) enemy.photoImage.destroy();
+            enemy.baseSprite = this.add
+              .image(enemy.x, enemy.y, "ice_enemy")
+              .setDisplaySize(CELL_SIZE, CELL_SIZE)
+              .setOrigin(0.5);
             enemy.photoImage = this.add
               .image(enemy.x, enemy.y, key)
-              .setDisplaySize(32, 32)
+              .setDisplaySize(CELL_SIZE, CELL_SIZE)
               .setOrigin(0.5);
             enemy.setVisible(false);
           }
