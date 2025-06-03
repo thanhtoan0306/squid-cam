@@ -70,27 +70,14 @@
 
       // Path for enemies to follow (adjusted for 500x500)
       const path = [
-        { x: 0 * CELL_SIZE + CELL_SIZE / 2, y: 20 * CELL_SIZE + CELL_SIZE / 2 },
-        {
-          x: 20 * CELL_SIZE + CELL_SIZE / 2,
-          y: 20 * CELL_SIZE + CELL_SIZE / 2,
-        },
-        {
-          x: 20 * CELL_SIZE + CELL_SIZE / 2,
-          y: 10 * CELL_SIZE + CELL_SIZE / 2,
-        },
-        {
-          x: 50 * CELL_SIZE + CELL_SIZE / 2,
-          y: 10 * CELL_SIZE + CELL_SIZE / 2,
-        },
-        {
-          x: 50 * CELL_SIZE + CELL_SIZE / 2,
-          y: 60 * CELL_SIZE + CELL_SIZE / 2,
-        },
-        {
-          x: 69 * CELL_SIZE + CELL_SIZE / 2,
-          y: 60 * CELL_SIZE + CELL_SIZE / 2,
-        },
+        { x: 0 * CELL_SIZE + CELL_SIZE / 2, y: 2 * CELL_SIZE + CELL_SIZE / 2 }, // (0,2)
+        { x: 2 * CELL_SIZE + CELL_SIZE / 2, y: 2 * CELL_SIZE + CELL_SIZE / 2 }, // (2,2)
+        { x: 2 * CELL_SIZE + CELL_SIZE / 2, y: 1 * CELL_SIZE + CELL_SIZE / 2 }, // (2,1)
+        { x: 5 * CELL_SIZE + CELL_SIZE / 2, y: 1 * CELL_SIZE + CELL_SIZE / 2 }, // (5,1)
+        { x: 5 * CELL_SIZE + CELL_SIZE / 2, y: 7 * CELL_SIZE + CELL_SIZE / 2 }, // (5,7)
+        { x: 8 * CELL_SIZE + CELL_SIZE / 2, y: 7 * CELL_SIZE + CELL_SIZE / 2 }, // (8,7)
+        { x: 8 * CELL_SIZE + CELL_SIZE / 2, y: 1 * CELL_SIZE + CELL_SIZE / 2 }, // (8,1)
+        { x: 9 * CELL_SIZE + CELL_SIZE / 2, y: 1 * CELL_SIZE + CELL_SIZE / 2 }, // (9,1)
       ];
 
       function preload() {
