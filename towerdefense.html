@@ -1,456 +1,524 @@
 <!DOCTYPE html>
 <html lang="vi">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tower Defense Game</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.70.0/phaser.min.js"></script>
     <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            background: #222;
-            color: white;
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+      body {
+        margin: 0;
+        padding: 20px;
+        background: #222;
+        color: white;
+        font-family: "Arial", sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
 
-        #game-container {
-            border: 3px solid #444;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-        }
+      #game-container {
+        border: 3px solid #444;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      }
 
-        h1 {
-            margin: 0 0 20px 0;
-            text-align: center;
-            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 32px;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-        }
+      h1 {
+        display: none;
+      }
     </style>
-</head>
+  </head>
 
-<body>
-    <h1>🏰 Tower Defense Game</h1>
+  <body>
     <div id="game-container"></div>
     <script>
-        // Game variables
-        let gameState = {
-            health: 100,
-            gold: 100,
-            wave: 1,
-            enemies: [],
-            towers: [],
-            bullets: [],
-            enemySpawnTimer: 0,
-            waveEnemyCount: 5,
-            enemiesSpawned: 0,
-            gameOver: false
-        };
+      // Game variables
+      let gameState = {
+        health: 100,
+        gold: 100,
+        wave: 1,
+        enemies: [],
+        towers: [],
+        bullets: [],
+        enemySpawnTimer: 0,
+        waveEnemyCount: 5,
+        enemiesSpawned: 0,
+        gameOver: false,
+      };
 
-        // Game configuration
-        const config = {
-            type: Phaser.AUTO,
-            width: 800,
-            height: 600,
-            parent: 'game-container',
-            backgroundColor: '#2c3e50',
-            scene: {
-                preload: preload,
-                create: create,
-                update: update
-            },
-            physics: {
-                default: 'arcade',
-                arcade: {
-                    debug: false
-                }
-            }
-        };
+      // Game configuration
+      const config = {
+        type: Phaser.AUTO,
+        width: 700,
+        height: 700,
+        parent: "game-container",
+        backgroundColor: "#2c3e50",
+        scene: {
+          preload: preload,
+          create: create,
+          update: update,
+        },
+        physics: {
+          default: "arcade",
+          arcade: {
+            debug: false,
+          },
+        },
+      };
 
-        // Path for enemies to follow
-        const path = [
-            { x: 0, y: 300 },
-            { x: 200, y: 300 },
-            { x: 200, y: 150 },
-            { x: 400, y: 150 },
-            { x: 400, y: 450 },
-            { x: 600, y: 450 },
-            { x: 600, y: 100 },
-            { x: 800, y: 100 }
-        ];
+      // Path for enemies to follow (adjusted for 500x500)
+      const path = [
+        { x: 0, y: 200 },
+        { x: 150, y: 200 },
+        { x: 150, y: 100 },
+        { x: 350, y: 100 },
+        { x: 350, y: 500 },
+        { x: 600, y: 500 },
+        { x: 600, y: 80 },
+        { x: 700, y: 80 },
+      ];
 
-        function preload() {
-            // Create simple colored rectangles as sprites
-            this.add.graphics()
-                .fillStyle(0x8B4513)
-                .fillRect(0, 0, 32, 32)
-                .generateTexture('tower', 32, 32);
+      function preload() {
+        // Create simple colored rectangles as sprites
+        this.add
+          .graphics()
+          .fillStyle(0x8b4513)
+          .fillRect(0, 0, 32, 32)
+          .generateTexture("tower", 32, 32);
 
-            this.add.graphics()
-                .fillStyle(0xFF0000)
-                .fillCircle(16, 16, 16)
-                .generateTexture('enemy', 32, 32);
+        this.add
+          .graphics()
+          .fillStyle(0xff0000)
+          .fillCircle(16, 16, 16)
+          .generateTexture("enemy", 32, 32);
 
-            this.add.graphics()
-                .fillStyle(0xFFFF00)
-                .fillCircle(4, 4, 4)
-                .generateTexture('bullet', 8, 8);
+        this.add
+          .graphics()
+          .fillStyle(0xffff00)
+          .fillCircle(4, 4, 4)
+          .generateTexture("bullet", 8, 8);
 
-            this.add.graphics()
-                .fillStyle(0x654321)
-                .fillRect(0, 0, 32, 32)
-                .generateTexture('grass', 32, 32);
+        this.add
+          .graphics()
+          .fillStyle(0x654321)
+          .fillRect(0, 0, 32, 32)
+          .generateTexture("grass", 32, 32);
+      }
+
+      function create() {
+        this.scene = this;
+
+        // Create background grid
+        for (let x = 0; x < config.width; x += 32) {
+          for (let y = 0; y < config.height; y += 32) {
+            this.add.image(x, y, "grass").setOrigin(0, 0).setAlpha(0.3);
+          }
         }
 
-        function create() {
-            this.scene = this;
+        // Draw path
+        const graphics = this.add.graphics();
+        graphics.lineStyle(8, 0x90ee90);
+        graphics.beginPath();
+        graphics.moveTo(path[0].x, path[0].y);
+        for (let i = 1; i < path.length; i++) {
+          graphics.lineTo(path[i].x, path[i].y);
+        }
+        graphics.strokePath();
 
-            // Create background grid
-            for (let x = 0; x < config.width; x += 32) {
-                for (let y = 0; y < config.height; y += 32) {
-                    this.add.image(x, y, 'grass').setOrigin(0, 0).setAlpha(0.3);
-                }
-            }
+        // Groups for game objects
+        this.enemies = this.add.group();
+        this.towers = this.add.group();
+        this.bullets = this.add.group();
 
-            // Draw path
-            const graphics = this.add.graphics();
-            graphics.lineStyle(8, 0x90EE90);
-            graphics.beginPath();
-            graphics.moveTo(path[0].x, path[0].y);
-            for (let i = 1; i < path.length; i++) {
-                graphics.lineTo(path[i].x, path[i].y);
-            }
-            graphics.strokePath();
+        // Click handler for placing towers
+        this.input.on("pointerdown", (pointer) => {
+          if (gameState.gameOver) return;
 
-            // Groups for game objects
-            this.enemies = this.add.group();
-            this.towers = this.add.group();
-            this.bullets = this.add.group();
+          const x = Math.floor(pointer.x / 32) * 32 + 16;
+          const y = Math.floor(pointer.y / 32) * 32 + 16;
 
-            // Click handler for placing towers
-            this.input.on('pointerdown', (pointer) => {
-                if (gameState.gameOver) return;
+          // Check if position is valid and player has enough gold
+          if (gameState.gold >= 50 && !getTowerAt(x, y) && !isOnPath(x, y)) {
+            createTower(this, x, y);
+            gameState.gold -= 50;
+          }
+        });
 
-                const x = Math.floor(pointer.x / 32) * 32 + 16;
-                const y = Math.floor(pointer.y / 32) * 32 + 16;
+        // Start spawning enemies
+        // this.time.addEvent({
+        //     delay: 1000,
+        //     callback: spawnEnemy,
+        //     callbackScope: this,
+        //     loop: true
+        // });
+      }
 
-                // Check if position is valid and player has enough gold
-                if (gameState.gold >= 50 && !getTowerAt(x, y) && !isOnPath(x, y)) {
-                    createTower(this, x, y);
-                    gameState.gold -= 50;
-                }
+      function update(time, delta) {
+        if (gameState.gameOver) return;
+
+        // Update enemies
+        this.enemies.children.entries.forEach((enemy) => {
+          updateEnemy(enemy, delta);
+        });
+
+        // Update bullets
+        this.bullets.children.entries.forEach((bullet) => {
+          updateBullet(bullet, delta);
+        });
+
+        // Update towers (shooting)
+        this.towers.children.entries.forEach((tower) => {
+          updateTower(this, tower, time);
+        });
+
+        // Check wave completion
+        if (
+          gameState.enemiesSpawned >= gameState.waveEnemyCount &&
+          this.enemies.children.size === 0
+        ) {
+          nextWave();
+        }
+      }
+
+      function spawnEnemy(username, photoUrl) {
+        if (
+          gameState.enemiesSpawned >= gameState.waveEnemyCount ||
+          gameState.gameOver
+        )
+          return;
+
+        const enemy = this.enemies.create(path[0].x, path[0].y, null); // No texture for now
+        enemy.pathIndex = 0;
+        enemy.pathProgress = 0;
+        enemy.health = 50 + (gameState.wave - 1) * 10;
+        enemy.maxHealth = enemy.health;
+        enemy.speed = 50 + (gameState.wave - 1) * 5;
+        enemy.value = 20;
+
+        // Store TikTok username and photo
+        enemy.tiktokUser = username || "";
+        enemy.tiktokPhoto = photoUrl || "";
+
+        // Health bar
+        enemy.healthBar = this.add.graphics();
+
+        // Add username text above enemy
+        if (username) {
+          enemy.usernameText = this.add
+            .text(enemy.x, enemy.y - 40, username, {
+              fontSize: "14px",
+              fill: "#fff",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              padding: { left: 4, right: 4, top: 2, bottom: 2 },
+            })
+            .setOrigin(0.5);
+        }
+
+        // Replace enemy sprite with photo if photoUrl exists
+        if (photoUrl) {
+          const key = "enemyPhoto_" + gameState.enemiesSpawned;
+          if (!this.textures.exists(key)) {
+            this.load.image(key, photoUrl);
+            this.load.once("complete", () => {
+              // Remove the old sprite if it exists
+              if (enemy.photoImage) enemy.photoImage.destroy();
+              // Add the photo as the main enemy sprite
+              enemy.photoImage = this.add
+                .image(enemy.x, enemy.y, key)
+                .setDisplaySize(32, 32)
+                .setOrigin(0.5);
+              // Hide the default enemy sprite (if any)
+              enemy.setVisible(false);
             });
-
-            // Start spawning enemies
-            // this.time.addEvent({
-            //     delay: 1000,
-            //     callback: spawnEnemy,
-            //     callbackScope: this,
-            //     loop: true
-            // });
+            this.load.start();
+          } else {
+            if (enemy.photoImage) enemy.photoImage.destroy();
+            enemy.photoImage = this.add
+              .image(enemy.x, enemy.y, key)
+              .setDisplaySize(32, 32)
+              .setOrigin(0.5);
+            enemy.setVisible(false);
+          }
+        } else {
+          // If no photo, fallback to default enemy sprite
+          enemy.setTexture("enemy");
         }
 
-        function update(time, delta) {
-            if (gameState.gameOver) return;
+        gameState.enemiesSpawned++;
+      }
 
-            // Update enemies
-            this.enemies.children.entries.forEach(enemy => {
-                updateEnemy(enemy, delta);
-            });
+      // In updateEnemy, update the photo position instead of the sprite:
+      function updateEnemy(enemy, delta) {
+        if (!enemy.active) return;
 
-            // Update bullets
-            this.bullets.children.entries.forEach(bullet => {
-                updateBullet(bullet, delta);
-            });
+        const currentPoint = path[enemy.pathIndex];
+        const nextPoint = path[enemy.pathIndex + 1];
 
-            // Update towers (shooting)
-            this.towers.children.entries.forEach(tower => {
-                updateTower(this, tower, time);
-            });
+        if (!nextPoint) {
+          if (enemy.usernameText) enemy.usernameText.destroy();
+          if (enemy.photoImage) enemy.photoImage.destroy();
+          enemy.healthBar.destroy();
+          enemy.destroy();
+          gameState.health -= 10;
+          if (gameState.health <= 0) {
+            gameOver();
+          }
+          return;
+        }
 
-            // Check wave completion
-            if (gameState.enemiesSpawned >= gameState.waveEnemyCount && this.enemies.children.size === 0) {
-                nextWave();
+        // Move towards next point
+        const dx = nextPoint.x - currentPoint.x;
+        const dy = nextPoint.y - currentPoint.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        enemy.pathProgress += (enemy.speed * delta) / 1000;
+
+        if (enemy.pathProgress >= distance) {
+          enemy.pathIndex++;
+          enemy.pathProgress = 0;
+        }
+
+        // Update position
+        const progress = enemy.pathProgress / distance;
+        enemy.x = currentPoint.x + dx * progress;
+        enemy.y = currentPoint.y + dy * progress;
+
+        // Update health bar
+        updateHealthBar(enemy);
+
+        // Update username text and photo position
+        if (enemy.usernameText) {
+          enemy.usernameText.x = enemy.x;
+          enemy.usernameText.y = enemy.y - 40;
+        }
+        if (enemy.photoImage) {
+          enemy.photoImage.x = enemy.x;
+          enemy.photoImage.y = enemy.y;
+        }
+      }
+
+      function updateHealthBar(enemy) {
+        enemy.healthBar.clear();
+
+        const barWidth = 30;
+        const barHeight = 4;
+        const healthPercent = enemy.health / enemy.maxHealth;
+
+        // Background
+        enemy.healthBar.fillStyle(0x000000);
+        enemy.healthBar.fillRect(
+          enemy.x - barWidth / 2,
+          enemy.y - 20,
+          barWidth,
+          barHeight
+        );
+
+        // Health
+        enemy.healthBar.fillStyle(
+          healthPercent > 0.5
+            ? 0x00ff00
+            : healthPercent > 0.25
+            ? 0xffff00
+            : 0xff0000
+        );
+        enemy.healthBar.fillRect(
+          enemy.x - barWidth / 2,
+          enemy.y - 20,
+          barWidth * healthPercent,
+          barHeight
+        );
+      }
+
+      function createTower(scene, x, y) {
+        const tower = scene.towers.create(x, y, "tower");
+        tower.range = 100;
+        tower.damage = 25;
+        tower.fireRate = 500; // milliseconds
+        tower.lastFired = 0;
+      }
+
+      function updateTower(scene, tower, time) {
+        if (time - tower.lastFired < tower.fireRate) return;
+
+        // Find nearest enemy in range
+        let nearestEnemy = null;
+        let nearestDistance = Infinity;
+
+        scene.enemies.children.entries.forEach((enemy) => {
+          const distance = Phaser.Math.Distance.Between(
+            tower.x,
+            tower.y,
+            enemy.x,
+            enemy.y
+          );
+          if (distance <= tower.range && distance < nearestDistance) {
+            nearestEnemy = enemy;
+            nearestDistance = distance;
+          }
+        });
+
+        if (nearestEnemy) {
+          createBullet(
+            scene,
+            tower.x,
+            tower.y,
+            nearestEnemy.x,
+            nearestEnemy.y,
+            tower.damage
+          );
+          tower.lastFired = time;
+        }
+      }
+
+      function createBullet(scene, startX, startY, targetX, targetY, damage) {
+        const bullet = scene.bullets.create(startX, startY, "bullet");
+
+        const angle = Phaser.Math.Angle.Between(
+          startX,
+          startY,
+          targetX,
+          targetY
+        );
+        bullet.speed = 300;
+        bullet.damage = damage;
+        bullet.velocityX = Math.cos(angle) * bullet.speed;
+        bullet.velocityY = Math.sin(angle) * bullet.speed;
+      }
+
+      function updateBullet(bullet, delta) {
+        if (!bullet.active) return;
+
+        bullet.x += (bullet.velocityX * delta) / 1000;
+        bullet.y += (bullet.velocityY * delta) / 1000;
+
+        // Check collision with enemies
+        const scene = bullet.scene;
+        scene.enemies.children.entries.forEach((enemy) => {
+          if (
+            Phaser.Math.Distance.Between(bullet.x, bullet.y, enemy.x, enemy.y) <
+            20
+          ) {
+            // Hit enemy
+            enemy.health -= bullet.damage;
+            bullet.destroy();
+
+            if (enemy.health <= 0) {
+              // Enemy died
+              gameState.gold += enemy.value;
+              enemy.healthBar.destroy();
+              // Clear photo and name if exist
+              if (enemy.usernameText) enemy.usernameText.destroy();
+              if (enemy.photoImage) enemy.photoImage.destroy();
+              enemy.destroy();
             }
+          }
+        });
+
+        // Remove bullets that go off screen
+        if (
+          bullet.x < 0 ||
+          bullet.x > config.width ||
+          bullet.y < 0 ||
+          bullet.y > config.height
+        ) {
+          bullet.destroy();
         }
+      }
 
-        function spawnEnemy(username, photoUrl) {
-            if (gameState.enemiesSpawned >= gameState.waveEnemyCount || gameState.gameOver) return;
+      function getTowerAt(x, y) {
+        return gameState.towers.find(
+          (tower) => Math.abs(tower.x - x) < 32 && Math.abs(tower.y - y) < 32
+        );
+      }
 
-            const enemy = this.enemies.create(path[0].x, path[0].y, null); // No texture for now
-            enemy.pathIndex = 0;
-            enemy.pathProgress = 0;
-            enemy.health = 50 + (gameState.wave - 1) * 10;
-            enemy.maxHealth = enemy.health;
-            enemy.speed = 50 + (gameState.wave - 1) * 5;
-            enemy.value = 20;
+      function isOnPath(x, y) {
+        // Simple check if position is too close to path
+        for (let i = 0; i < path.length - 1; i++) {
+          const start = path[i];
+          const end = path[i + 1];
+          const distance = distanceToLineSegment(
+            x,
+            y,
+            start.x,
+            start.y,
+            end.x,
+            end.y
+          );
+          if (distance < 40) return true;
+        }
+        return false;
+      }
 
-            // Store TikTok username and photo
-            enemy.tiktokUser = username || "";
-            enemy.tiktokPhoto = photoUrl || "";
+      function distanceToLineSegment(px, py, x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.sqrt(dx * dx + dy * dy);
 
-            // Health bar
-            enemy.healthBar = this.add.graphics();
+        if (length === 0)
+          return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
 
-            // Add username text above enemy
-            if (username) {
-                enemy.usernameText = this.add.text(enemy.x, enemy.y - 40, username, {
-                    fontSize: '14px',
-                    fill: '#fff',
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    padding: { left: 4, right: 4, top: 2, bottom: 2 }
-                }).setOrigin(0.5);
+        const t = Math.max(
+          0,
+          Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (length * length))
+        );
+        const projX = x1 + t * dx;
+        const projY = y1 + t * dy;
+
+        return Math.sqrt(
+          (px - projX) * (px - projX) + (py - projY) * (py - projY)
+        );
+      }
+
+      function nextWave() {
+        gameState.wave++;
+        gameState.waveEnemyCount = 5 + gameState.wave * 2;
+        gameState.enemiesSpawned = 0;
+        gameState.gold += 50;
+      }
+
+      function gameOver() {
+        gameState.gameOver = true;
+        const scene = game.scene.scenes[0];
+
+        // Create game over text
+        const gameOverText = scene.add
+          .text(
+            config.width / 2,
+            config.height / 2,
+            "GAME OVER\nWave đạt được: " +
+              gameState.wave +
+              "\nNhấn F5 để chơi lại",
+            {
+              fontSize: "32px",
+              fill: "#FF0000",
+              align: "center",
+              stroke: "#000000",
+              strokeThickness: 4,
             }
+          )
+          .setOrigin(0.5);
+      }
 
-            // Replace enemy sprite with photo if photoUrl exists
-            if (photoUrl) {
-                const key = 'enemyPhoto_' + gameState.enemiesSpawned;
-                if (!this.textures.exists(key)) {
-                    this.load.image(key, photoUrl);
-                    this.load.once('complete', () => {
-                        // Remove the old sprite if it exists
-                        if (enemy.photoImage) enemy.photoImage.destroy();
-                        // Add the photo as the main enemy sprite
-                        enemy.photoImage = this.add.image(enemy.x, enemy.y, key)
-                            .setDisplaySize(32, 32)
-                            .setOrigin(0.5);
-                        // Hide the default enemy sprite (if any)
-                        enemy.setVisible(false);
-                    });
-                    this.load.start();
-                } else {
-                    if (enemy.photoImage) enemy.photoImage.destroy();
-                    enemy.photoImage = this.add.image(enemy.x, enemy.y, key)
-                        .setDisplaySize(32, 32)
-                        .setOrigin(0.5);
-                    enemy.setVisible(false);
-                }
-            } else {
-                // If no photo, fallback to default enemy sprite
-                enemy.setTexture('enemy');
-            }
+      // Start the game
+      const game = new Phaser.Game(config);
 
-            gameState.enemiesSpawned++;
-        }
+      // TikTok chat integration
+      try {
+        const { ipcRenderer } = require("electron");
+        ipcRenderer.on("tiktok-chat", (event, data) => {
+          console.log("screen2", data);
 
-        // In updateEnemy, update the photo position instead of the sprite:
-        function updateEnemy(enemy, delta) {
-            if (!enemy.active) return;
-
-            const currentPoint = path[enemy.pathIndex];
-            const nextPoint = path[enemy.pathIndex + 1];
-
-            if (!nextPoint) {
-                if (enemy.usernameText) enemy.usernameText.destroy();
-                if (enemy.photoImage) enemy.photoImage.destroy();
-                enemy.healthBar.destroy();
-                enemy.destroy();
-                gameState.health -= 10;
-                if (gameState.health <= 0) {
-                    gameOver();
-                }
-                return;
-            }
-
-            // Move towards next point
-            const dx = nextPoint.x - currentPoint.x;
-            const dy = nextPoint.y - currentPoint.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            enemy.pathProgress += (enemy.speed * delta) / 1000;
-
-            if (enemy.pathProgress >= distance) {
-                enemy.pathIndex++;
-                enemy.pathProgress = 0;
-            }
-
-            // Update position
-            const progress = enemy.pathProgress / distance;
-            enemy.x = currentPoint.x + dx * progress;
-            enemy.y = currentPoint.y + dy * progress;
-
-            // Update health bar
-            updateHealthBar(enemy);
-
-            // Update username text and photo position
-            if (enemy.usernameText) {
-                enemy.usernameText.x = enemy.x;
-                enemy.usernameText.y = enemy.y - 40;
-            }
-            if (enemy.photoImage) {
-                enemy.photoImage.x = enemy.x;
-                enemy.photoImage.y = enemy.y;
-            }
-        }
-
-        function updateHealthBar(enemy) {
-            enemy.healthBar.clear();
-
-            const barWidth = 30;
-            const barHeight = 4;
-            const healthPercent = enemy.health / enemy.maxHealth;
-
-            // Background
-            enemy.healthBar.fillStyle(0x000000);
-            enemy.healthBar.fillRect(enemy.x - barWidth / 2, enemy.y - 20, barWidth, barHeight);
-
-            // Health
-            enemy.healthBar.fillStyle(healthPercent > 0.5 ? 0x00FF00 : healthPercent > 0.25 ? 0xFFFF00 : 0xFF0000);
-            enemy.healthBar.fillRect(enemy.x - barWidth / 2, enemy.y - 20, barWidth * healthPercent, barHeight);
-        }
-
-        function createTower(scene, x, y) {
-            const tower = scene.towers.create(x, y, 'tower');
-            tower.range = 100;
-            tower.damage = 25;
-            tower.fireRate = 500; // milliseconds
-            tower.lastFired = 0;
-        }
-
-        function updateTower(scene, tower, time) {
-            if (time - tower.lastFired < tower.fireRate) return;
-
-            // Find nearest enemy in range
-            let nearestEnemy = null;
-            let nearestDistance = Infinity;
-
-            scene.enemies.children.entries.forEach(enemy => {
-                const distance = Phaser.Math.Distance.Between(tower.x, tower.y, enemy.x, enemy.y);
-                if (distance <= tower.range && distance < nearestDistance) {
-                    nearestEnemy = enemy;
-                    nearestDistance = distance;
-                }
-            });
-
-            if (nearestEnemy) {
-                createBullet(scene, tower.x, tower.y, nearestEnemy.x, nearestEnemy.y, tower.damage);
-                tower.lastFired = time;
-            }
-        }
-
-        function createBullet(scene, startX, startY, targetX, targetY, damage) {
-            const bullet = scene.bullets.create(startX, startY, 'bullet');
-
-            const angle = Phaser.Math.Angle.Between(startX, startY, targetX, targetY);
-            bullet.speed = 300;
-            bullet.damage = damage;
-            bullet.velocityX = Math.cos(angle) * bullet.speed;
-            bullet.velocityY = Math.sin(angle) * bullet.speed;
-        }
-
-        function updateBullet(bullet, delta) {
-            if (!bullet.active) return;
-
-            bullet.x += bullet.velocityX * delta / 1000;
-            bullet.y += bullet.velocityY * delta / 1000;
-
-            // Check collision with enemies
-            const scene = bullet.scene;
-            scene.enemies.children.entries.forEach(enemy => {
-                if (Phaser.Math.Distance.Between(bullet.x, bullet.y, enemy.x, enemy.y) < 20) {
-                    // Hit enemy
-                    enemy.health -= bullet.damage;
-                    bullet.destroy();
-
-                    if (enemy.health <= 0) {
-                        // Enemy died
-                        gameState.gold += enemy.value;
-                        enemy.healthBar.destroy();
-                        // Clear photo and name if exist
-                        if (enemy.usernameText) enemy.usernameText.destroy();
-                        if (enemy.photoImage) enemy.photoImage.destroy();
-                        enemy.destroy();
-                    }
-                }
-            });
-
-            // Remove bullets that go off screen
-            if (bullet.x < 0 || bullet.x > config.width || bullet.y < 0 || bullet.y > config.height) {
-                bullet.destroy();
-            }
-        }
-
-        function getTowerAt(x, y) {
-            return gameState.towers.find(tower =>
-                Math.abs(tower.x - x) < 32 && Math.abs(tower.y - y) < 32
-            );
-        }
-
-        function isOnPath(x, y) {
-            // Simple check if position is too close to path
-            for (let i = 0; i < path.length - 1; i++) {
-                const start = path[i];
-                const end = path[i + 1];
-                const distance = distanceToLineSegment(x, y, start.x, start.y, end.x, end.y);
-                if (distance < 40) return true;
-            }
-            return false;
-        }
-
-        function distanceToLineSegment(px, py, x1, y1, x2, y2) {
-            const dx = x2 - x1;
-            const dy = y2 - y1;
-            const length = Math.sqrt(dx * dx + dy * dy);
-
-            if (length === 0) return Math.sqrt((px - x1) * (px - x1) + (py - y1) * (py - y1));
-
-            const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (length * length)));
-            const projX = x1 + t * dx;
-            const projY = y1 + t * dy;
-
-            return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
-        }
-
-        function nextWave() {
-            gameState.wave++;
-            gameState.waveEnemyCount = 5 + gameState.wave * 2;
-            gameState.enemiesSpawned = 0;
-            gameState.gold += 50;
-        }
-
-        function gameOver() {
-            gameState.gameOver = true;
+          // Spawn an enemy for each TikTok chat comment
+          if (!gameState.gameOver) {
             const scene = game.scene.scenes[0];
-
-            // Create game over text
-            const gameOverText = scene.add.text(config.width / 2, config.height / 2,
-                'GAME OVER\nWave đạt được: ' + gameState.wave + '\nNhấn F5 để chơi lại', {
-                fontSize: '32px',
-                fill: '#FF0000',
-                align: 'center',
-                stroke: '#000000',
-                strokeThickness: 4
-            }).setOrigin(0.5);
-        }
-
-        // Start the game
-        const game = new Phaser.Game(config);
-
-        // TikTok chat integration
-        try {
-            const { ipcRenderer } = require("electron");
-            ipcRenderer.on("tiktok-chat", (event, data) => {
-                console.log('screen2', data);
-                
-                // Spawn an enemy for each TikTok chat comment
-                if (!gameState.gameOver) {
-                    const scene = game.scene.scenes[0];
-                    // Use the first photo URL if available
-                    const photoUrl = typeof data.photo === "string" ? data.photo : "";
-                    spawnEnemy.call(scene, data.user, photoUrl);
-                }
-            });
-        } catch (e) {
-            // Not running in Electron, ignore
-        }
+            // Use the first photo URL if available
+            const photoUrl = typeof data.photo === "string" ? data.photo : "";
+            spawnEnemy.call(scene, data.user, photoUrl);
+          }
+        });
+      } catch (e) {
+        // Not running in Electron, ignore
+      }
     </script>
-</body>
-
+  </body>
 </html>

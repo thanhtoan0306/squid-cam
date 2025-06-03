@@ -1,3 +1,7 @@
+require('electron-reload')(__dirname, {
+  electron: require(`${__dirname}/node_modules/electron`)
+});
+
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { startTikTokServer } = require("./tiktok-server");
@@ -37,8 +41,8 @@ function createWindows() {
 ipcMain.on("open-secondary-window", () => {
   if (!secondaryWindow || secondaryWindow.isDestroyed()) {
     secondaryWindow = new BrowserWindow({
-      width: 900,
-      height: 700,
+      width: 800,
+      height: 800,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
