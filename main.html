@@ -97,6 +97,27 @@
       .chat-message strong {
         color: #ff0050;
       }
+      #button-group {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start; /* Align to the left */
+        justify-content: flex-start;
+        margin-top: 20px;
+        position: fixed;
+        left: 40px;
+        top: 80px;
+        min-width: 260px;
+      }
+      #button-group button {
+        width: 260px; /* Match Connect TikTok Live width */
+        padding: 15px 30px;
+        font-size: 1.2em;
+        border-radius: 8px;
+        margin: 8px 0;
+        border: none;
+        cursor: pointer;
+        box-sizing: border-box;
+      }
     </style>
   </head>
   <body>
@@ -105,21 +126,23 @@
       type="text"
       placeholder="Enter TikTok username..."
     />
-    <button id="tiktok-btn" class="off">
-      Connect TikTok Live
-      <span id="status-dot"></span>
-      <span id="loading-spinner"></span>
-    </button>
-    <button id="open-secondary-btn">Open Tower Defense</button>
-    <button id="simulate-chat-btn" style="background: #2ecc40">
-      Simulate TikTok Chat
-    </button>
-    <button id="toggle-grid-btn" style="background: #0099ff">
-      Toggle 10x10 Grid
-    </button>
-    <button id="clear-towers-btn" style="background: #ff9900">
-      Clear All Towers
-    </button>
+    <div id="button-group">
+      <button id="tiktok-btn" class="off">
+        Connect TikTok Live
+        <span id="status-dot"></span>
+        <span id="loading-spinner"></span>
+      </button>
+      <button id="open-secondary-btn">Open Tower Defense</button>
+      <button id="simulate-chat-btn" style="background: #2ecc40">
+        Simulate TikTok Chat
+      </button>
+      <button id="toggle-grid-btn" style="background: #0099ff">
+        Toggle 10x10 Grid
+      </button>
+      <button id="clear-towers-btn" style="background: #ff9900">
+        Clear All Towers
+      </button>
+    </div>
     <div id="chat-box"></div>
     <script>
       const { ipcRenderer } = require("electron");
