@@ -16,7 +16,7 @@ export function distanceToLineSegment(px, py, x1, y1, x2, y2) {
   return Math.sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
 }
 
-export function isOnPath(x, y) {
+export function isOnPath(x, y, path) {
   // Simple check if position is too close to path
   for (let i = 0; i < path.length - 1; i++) {
     const start = path[i];
