@@ -41,14 +41,12 @@
       // Game variables
       let gameState = {
         health: 100,
-        gold: 100,
+        gold: 100, // You can keep this if you want to display gold, but it won't be limited
         wave: 1,
         enemies: [],
         towers: [],
         bullets: [],
-        enemySpawnTimer: 0,
-        waveEnemyCount: 5,
-        enemiesSpawned: 0,
+        // Remove enemySpawnTimer, waveEnemyCount, enemiesSpawned
         gameOver: false,
       };
 
@@ -173,23 +171,26 @@
           updateTower(this, tower, time);
         });
 
-        // Check wave completion
-        if (
-          gameState.enemiesSpawned >= gameState.waveEnemyCount &&
-          this.enemies.children.size === 0
-        ) {
-          nextWave();
-        }
+        // Remove wave completion check
+        // if (
+        //   gameState.enemiesSpawned >= gameState.waveEnemyCount &&
+        //   this.enemies.children.size === 0
+        // ) {
+        //   nextWave();
+        // }
       }
 
       function spawnEnemy(username, photoUrl) {
-        if (
-          gameState.enemiesSpawned >= gameState.waveEnemyCount ||
-          gameState.gameOver
-        )
-          return;
+        if (gameState.gameOver) return; // Only limit by game over
 
-        const enemy = this.enemies.create(path[0].x, path[0].y, "ice_enemy"); // Use "ice_enemy" as texture
+        // Remove enemy count checks
+        // if (
+        //   gameState.enemiesSpawned >= gameState.waveEnemyCount ||
+        //   gameState.gameOver
+        // )
+        //   return;
+
+        const enemy = this.enemies.create(path[0].x, path[0].y, "ice_enemy");
         enemy.pathIndex = 0;
         enemy.pathProgress = 0;
         enemy.health = 50 + (gameState.wave - 1) * 10;
@@ -246,7 +247,8 @@
           enemy.setTexture("enemy");
         }
 
-        gameState.enemiesSpawned++;
+        // Remove enemiesSpawned increment
+        // gameState.enemiesSpawned++;
       }
 
       // In updateEnemy, update the photo position instead of the sprite:
@@ -403,8 +405,9 @@
 
       function nextWave() {
         gameState.wave++;
-        gameState.waveEnemyCount = 5 + gameState.wave * 2;
-        gameState.enemiesSpawned = 0;
+        // Remove waveEnemyCount and enemiesSpawned logic
+        // gameState.waveEnemyCount = 5 + gameState.wave * 2;
+        // gameState.enemiesSpawned = 0;
         gameState.gold += 50;
       }
 
