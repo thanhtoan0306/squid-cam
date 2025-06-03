@@ -182,6 +182,12 @@ ipcMain.on("simulate-tiktok-chat", (event, fakeData) => {
   }
 });
 
+ipcMain.on("toggle-grid", () => {
+  if (secondaryWindow) {
+    secondaryWindow.webContents.send("toggle-grid");
+  }
+});
+
 app.whenReady().then(() => {
   createWindows();
   startTikTokListener(); // Start TikTok listener

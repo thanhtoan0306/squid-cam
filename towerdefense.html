@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tower Defense Game</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.70.0/phaser.min.js"></script>
     <style>
       body {
         margin: 0;
@@ -31,6 +30,7 @@
 
   <body>
     <div id="game-container"></div>
+    <script src="phaser.min.js"></script>
     <script>
       // Game variables
       let gameState = {
@@ -502,18 +502,42 @@
       // Start the game
       const game = new Phaser.Game(config);
 
-      // TikTok chat integration
+      let gridGraphics = null;
+      let gridVisible = false;
+
       try {
         const { ipcRenderer } = require("electron");
+
+        // TikTok chat integration
         ipcRenderer.on("tiktok-chat", (event, data) => {
           console.log("screen2", data);
-
-          // Spawn an enemy for each TikTok chat comment
           if (!gameState.gameOver) {
             const scene = game.scene.scenes[0];
-            // Use the first photo URL if available
             const photoUrl = typeof data.photo === "string" ? data.photo : "";
             spawnEnemy.call(scene, data.user, photoUrl);
+          }
+        });
+
+        // Grid toggle integration
+        ipcRenderer.on("toggle-grid", () => {
+          console.log("Toggle grid received");
+
+          const scene = game.scene.scenes[0];
+          if (!gridGraphics) {
+            gridGraphics = scene.add.graphics();
+          }
+          gridGraphics.clear();
+          gridVisible = !gridVisible;
+          if (gridVisible) {
+            gridGraphics.lineStyle(1, 0x00ffff, 0.3);
+            const cellW = config.width / 10;
+            const cellH = config.height / 10;
+            for (let i = 1; i < 10; i++) {
+              // Vertical lines
+              gridGraphics.lineBetween(i * cellW, 0, i * cellW, config.height);
+              // Horizontal lines
+              gridGraphics.lineBetween(0, i * cellH, config.width, i * cellH);
+            }
           }
         });
       } catch (e) {

@@ -112,6 +112,7 @@
     </button>
     <button id="open-secondary-btn">Open Tower Defense</button>
     <button id="simulate-chat-btn" style="background:#2ecc40;">Simulate TikTok Chat</button>
+    <button id="toggle-grid-btn" style="background:#0099ff;">Toggle 10x10 Grid</button>
     <div id="chat-box"></div>
     <script>
       const { ipcRenderer } = require("electron");
@@ -123,6 +124,7 @@
       const statusDot = document.getElementById("status-dot");
       const loadingSpinner = document.getElementById("loading-spinner");
       const chatBox = document.getElementById("chat-box");
+      
 
       tiktokBtn.addEventListener("click", () => {
         const username = usernameInput.value.trim();
