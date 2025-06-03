@@ -66,16 +66,31 @@
         },
       };
 
+      const CELL_SIZE = 10; // 700px / 10 cells = 70px per cell
+
       // Path for enemies to follow (adjusted for 500x500)
       const path = [
-        { x: 0, y: 200 },
-        { x: 150, y: 200 },
-        { x: 150, y: 100 },
-        { x: 350, y: 100 },
-        { x: 350, y: 500 },
-        { x: 600, y: 500 },
-        { x: 600, y: 80 },
-        { x: 700, y: 80 },
+        { x: 0 * CELL_SIZE + CELL_SIZE / 2, y: 20 * CELL_SIZE + CELL_SIZE / 2 },
+        {
+          x: 20 * CELL_SIZE + CELL_SIZE / 2,
+          y: 20 * CELL_SIZE + CELL_SIZE / 2,
+        },
+        {
+          x: 20 * CELL_SIZE + CELL_SIZE / 2,
+          y: 10 * CELL_SIZE + CELL_SIZE / 2,
+        },
+        {
+          x: 50 * CELL_SIZE + CELL_SIZE / 2,
+          y: 10 * CELL_SIZE + CELL_SIZE / 2,
+        },
+        {
+          x: 50 * CELL_SIZE + CELL_SIZE / 2,
+          y: 60 * CELL_SIZE + CELL_SIZE / 2,
+        },
+        {
+          x: 69 * CELL_SIZE + CELL_SIZE / 2,
+          y: 60 * CELL_SIZE + CELL_SIZE / 2,
+        },
       ];
 
       function preload() {
@@ -83,41 +98,41 @@
         this.add
           .graphics()
           .fillStyle(0x8b4513)
-          .fillRect(0, 0, 32, 32)
-          .generateTexture("tower", 32, 32);
+          .fillRect(0, 0, CELL_SIZE, CELL_SIZE)
+          .generateTexture("tower", CELL_SIZE, CELL_SIZE);
 
         this.add
           .graphics()
           .fillStyle(0xff0000)
-          .fillCircle(16, 16, 16)
-          .generateTexture("enemy", 32, 32);
+          .fillCircle(CELL_SIZE / 2, CELL_SIZE / 2, CELL_SIZE / 2)
+          .generateTexture("enemy", CELL_SIZE, CELL_SIZE);
 
         this.add
           .graphics()
-          .fillStyle(0xffff00)
-          .fillCircle(4, 4, 4)
-          .generateTexture("bullet", 8, 8);
+          .fillStyle(0xffffff)
+          .fillCircle(CELL_SIZE / 2, CELL_SIZE / 2, CELL_SIZE / 4)
+          .generateTexture("bullet", CELL_SIZE / 2, CELL_SIZE / 2);
 
         this.add
           .graphics()
           .fillStyle(0x654321)
-          .fillRect(0, 0, 32, 32)
-          .generateTexture("grass", 32, 32);
+          .fillRect(0, 0, CELL_SIZE, CELL_SIZE)
+          .generateTexture("grass", CELL_SIZE, CELL_SIZE);
       }
 
       function create() {
         this.scene = this;
 
-        // Create background grid
-        for (let x = 0; x < config.width; x += 32) {
-          for (let y = 0; y < config.height; y += 32) {
+        // Create background grid (10x10)
+        for (let x = 0; x < config.width; x += CELL_SIZE) {
+          for (let y = 0; y < config.height; y += CELL_SIZE) {
             this.add.image(x, y, "grass").setOrigin(0, 0).setAlpha(0.3);
           }
         }
 
         // Draw path
         const graphics = this.add.graphics();
-        graphics.lineStyle(8, 0x90ee90);
+        graphics.lineStyle(10, 0x90ee90); // Path width is now 10px
         graphics.beginPath();
         graphics.moveTo(path[0].x, path[0].y);
         for (let i = 1; i < path.length; i++) {
@@ -130,17 +145,18 @@
         this.towers = this.add.group();
         this.bullets = this.add.group();
 
-        // Click handler for placing towers
+        // Click handler for placing towers (snap to grid)
         this.input.on("pointerdown", (pointer) => {
           if (gameState.gameOver) return;
 
-          const x = Math.floor(pointer.x / 32) * 32 + 16;
-          const y = Math.floor(pointer.y / 32) * 32 + 16;
+          // Snap to grid cell center
+          const cellX = Math.floor(pointer.x / CELL_SIZE);
+          const cellY = Math.floor(pointer.y / CELL_SIZE);
+          const x = cellX * CELL_SIZE + CELL_SIZE / 2;
+          const y = cellY * CELL_SIZE + CELL_SIZE / 2;
 
-          // Check if position is valid and player has enough gold
-          if (gameState.gold >= 50 && !getTowerAt(x, y) && !isOnPath(x, y)) {
+          if (!getTowerAt(x, y) && !isOnPath(x, y)) {
             createTower(this, x, y);
-            gameState.gold -= 50;
           }
         });
 
