@@ -231,6 +231,7 @@ function updateEnemy(enemy, delta) {
 
   if (!nextPoint) {
     if (enemy.usernameText) enemy.usernameText.destroy();
+    if (enemy.baseSprites) enemy.baseSprite.destroy();
     if (enemy.photoImage) enemy.photoImage.destroy();
     enemy.healthBar.destroy();
     enemy.destroy();
@@ -269,6 +270,10 @@ function updateEnemy(enemy, delta) {
   if (enemy.photoImage) {
     enemy.photoImage.x = enemy.x;
     enemy.photoImage.y = enemy.y;
+  }
+  if (enemy.baseSprite) {
+    enemy.baseSprite.x = enemy.x;
+    enemy.baseSprite.y = enemy.y + 20;
   }
 }
 
@@ -347,6 +352,7 @@ function updateBullet(bullet, delta) {
         // Clear photo and name if exist
         if (enemy.usernameText) enemy.usernameText.destroy();
         if (enemy.photoImage) enemy.photoImage.destroy();
+        if (enemy.baseSprite) enemy.baseSprite.destroy();
         enemy.destroy();
       }
     }
