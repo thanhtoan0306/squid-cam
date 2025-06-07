@@ -79,6 +79,7 @@ function preload() {
     .generateTexture('grass', CELL_SIZE, CELL_SIZE);
 
   this.load.image('ice_enemy', 'public/assets/enemy1.png'); // Add this line
+  this.load.image('ghost_enemy', 'public/assets/enemy2.png'); // Add this line
   this.load.image('tower', 'public/assets/tower2.png');
 }
 
@@ -189,31 +190,30 @@ function spawnEnemy(username, photoUrl) {
         if (enemy.photoImage) enemy.photoImage.destroy();
         // Add the base ice_enemy sprite
         enemy.baseSprite = this.add
-          .image(enemy.x, enemy.y, 'ice_enemy')
+          .image(enemy.x, enemy.y, 'ghost_enemy')
           .setDisplaySize(CELL_SIZE, CELL_SIZE)
           .setOrigin(0.5);
         // Add the photo overlay on top
-        // enemy.photoImage = this.add
-        //   .image(enemy.x, enemy.y, userAvatarKey)
-        //   .setDisplaySize(CELL_SIZE, CELL_SIZE)
-        //   .setOrigin(0.5);
+        enemy.photoImage = this.add
+          .image(enemy.x, enemy.y, userAvatarKey)
+          .setDisplaySize(CELL_SIZE / 2, CELL_SIZE / 2)
+          .setOrigin(0.5);
         // Hide the default enemy sprite (if any)
         enemy.setVisible(false);
       });
       this.load.start();
+    } else {
+      if (enemy.photoImage) enemy.photoImage.destroy();
+      enemy.baseSprite = this.add
+        .image(enemy.x, enemy.y, 'ghost_enemy')
+        .setDisplaySize(CELL_SIZE, CELL_SIZE)
+        .setOrigin(0.5);
+      enemy.photoImage = this.add
+        .image(enemy.x, enemy.y, userAvatarKey)
+        .setDisplaySize(CELL_SIZE / 2, CELL_SIZE / 2)
+        .setOrigin(0.5);
+      enemy.setVisible(false);
     }
-    // else {
-    //   if (enemy.photoImage) enemy.photoImage.destroy();
-    //   enemy.baseSprite = this.add
-    //     .image(enemy.x, enemy.y, 'ice_enemy')
-    //     .setDisplaySize(CELL_SIZE, CELL_SIZE)
-    //     .setOrigin(0.5);
-    //   enemy.photoImage = this.add
-    //     .image(enemy.x, enemy.y, userAvatarKey)
-    //     .setDisplaySize(CELL_SIZE, CELL_SIZE)
-    //     .setOrigin(0.5);
-    //   enemy.setVisible(false);
-    // }
   } else {
     // If no photo, fallback to default enemy sprite
     enemy.setTexture('enemy');
@@ -270,7 +270,7 @@ function updateEnemy(enemy, delta) {
   }
   if (enemy.photoImage) {
     enemy.photoImage.x = enemy.x;
-    enemy.photoImage.y = enemy.y;
+    enemy.photoImage.y = enemy.y + 40;
   }
   if (enemy.baseSprite) {
     enemy.baseSprite.x = enemy.x;
