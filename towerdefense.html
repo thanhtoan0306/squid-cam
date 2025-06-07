@@ -32,7 +32,55 @@
 
   <body>
     <div id="game-container"></div>
-    <script src="phaser.min.js"></script>
+    <script type="module" src="phaser.min.js"></script>
     <script type="module" src="gameMain.js"></script>
+
+    <!-- <script type="module">
+      try {
+        const { ipcRenderer } = require('electron');
+
+        // TikTok chat integration
+        ipcRenderer.on('tiktok-chat', (event, data) => {
+          console.log('screen2', data);
+          if (!gameState.gameOver) {
+            const scene = game.scene.scenes[0];
+            const photoUrl = typeof data.photo === 'string' ? data.photo : '';
+            spawnEnemy.call(scene, data.user, photoUrl);
+          }
+        });
+
+        ipcRenderer.on('clear-all-towers', () => {
+          const scene = game.scene.scenes[0];
+          scene.towers.clear(true, true); // Remove all tower sprites
+          // If you keep a gameState.towers array, clear it too:
+          if (gameState.towers) gameState.towers = [];
+        });
+
+        // Grid toggle integration
+        ipcRenderer.on('toggle-grid', () => {
+          console.log('Toggle grid received');
+
+          const scene = game.scene.scenes[0];
+          if (!gridGraphics) {
+            gridGraphics = scene.add.graphics();
+          }
+          gridGraphics.clear();
+          gridVisible = !gridVisible;
+          if (gridVisible) {
+            gridGraphics.lineStyle(1, 0x00ffff, 0.3);
+            const cellW = config.width / 10;
+            const cellH = config.height / 10;
+            for (let i = 1; i < 10; i++) {
+              // Vertical lines
+              gridGraphics.lineBetween(i * cellW, 0, i * cellW, config.height);
+              // Horizontal lines
+              gridGraphics.lineBetween(0, i * cellH, config.width, i * cellH);
+            }
+          }
+        });
+      } catch (e) {
+        // Not running in Electron, ignore
+      }
+    </script> -->
   </body>
 </html>

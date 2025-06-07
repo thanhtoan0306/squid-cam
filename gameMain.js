@@ -1,7 +1,7 @@
+/* global Phaser */
 import { isOnPath } from './components/logic.js';
 import { updateHealthBar } from './components/enemy.js';
-import Phaser from './phaser.min.js';
-import { ipcRenderer } from './node_modules/electron';
+const { ipcRenderer } = window.require('electron');
 console.log('run js');
 
 // Game variables
