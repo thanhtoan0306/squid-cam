@@ -49,7 +49,7 @@ ipcMain.on('open-secondary-window', () => {
       },
       // autoHideMenuBar: true,
     });
-    secondaryWindow.loadFile('towerdefense.html');
+    secondaryWindow.loadFile('./game-rgp-theodoric/index.html');
     // secondaryWindow.webContents.openDevTools({ mode: "detach" }); // Optional: DevTools
   } else {
     secondaryWindow.focus();

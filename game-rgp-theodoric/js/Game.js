@@ -3,7 +3,21 @@
 // http://www.joshmorony.com/how-to-create-an-animated-character-using-sprites-in-phaser/
 // http://jschomay.tumblr.com/post/103568304133/tutorial-building-a-polished-html5-space-shooter
 // http://ezelia.com/2014/tutorial-creating-basic-multiplayer-game-phaser-eureca-io
+const { ipcRenderer } = window.require('electron');
+try {
+    // TikTok chat integration
+    ipcRenderer.on('tiktok-chat', (event, data) => {
+      console.log('screen2', data);
+    });
+  
 
+
+  } catch (e) {
+    console.log(e);
+  
+    // Not running in Electron, ignore
+  }
+  
 Theodoric.Game = function () {
 
     //  When a State is added to Phaser it automatically has the following properties set on it, even if they already exist:
