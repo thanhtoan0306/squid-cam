@@ -93,7 +93,7 @@ Theodoric.Game.prototype = {
         // Music
 		this.music = this.game.add.audio('overworldMusic');
 		this.music.loop = true;
-		this.music.play();
+		// this.music.play();
 
         // Sound effects
         this.generateSounds();
