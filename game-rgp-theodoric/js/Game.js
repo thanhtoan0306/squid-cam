@@ -323,7 +323,7 @@ Theodoric.Game.prototype = {
             console.log(attacker.name + " used " + attacks.name + "!");
             if (attacks.name === 'sword') {
                 a.rotation = this.game.physics.arcade.moveToPointer(a, attacks.range);
-                this.attackSound.play();
+                // this.attackSound.play();
             } else if (attacks.name === 'spell') {
                 a.rotation = this.game.physics.arcade.moveToPointer(a, attacks.range);
                 a.effect = 'spell';
@@ -458,8 +458,8 @@ Theodoric.Game.prototype = {
         player.name = 'Theodoric';
         player.level = 1;
 
-        player.health = 100;
-        player.vitality = 100;
+        player.health = 10000;
+        player.vitality = 10000;
         player.strength = 25;
         player.speed = 125;
 

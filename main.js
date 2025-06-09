@@ -41,8 +41,8 @@ function createWindows() {
 ipcMain.on('open-secondary-window', () => {
   if (!secondaryWindow || secondaryWindow.isDestroyed()) {
     secondaryWindow = new BrowserWindow({
-      width: 800,
-      height: 800,
+      width: 512 * 2,
+      height: 384 * 2,
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
