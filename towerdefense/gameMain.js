@@ -1,6 +1,6 @@
 /* global Phaser */
-import { isOnPath } from './components/logic.js';
-import { updateHealthBar } from './components/enemy.js';
+import { isOnPath } from '../components/logic.js';
+import { updateHealthBar } from '../components/enemy.js';
 const { ipcRenderer } = window.require('electron');
 console.log('run js');
 

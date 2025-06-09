@@ -4,7 +4,7 @@ require('electron-reload')(__dirname, {
 });
 
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { startTikTokServer } = require('./tiktok-server');
+const { startTikTokServer } = require('./archive/tiktok-server');
 const { TikTokLiveConnection, WebcastEvent } = require('tiktok-live-connector');
 
 let mainWindow;

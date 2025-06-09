@@ -4,9 +4,7 @@
   "description": "A sample Electron app with two windows",
   "main": "main.js",
   "scripts": {
-    "dev": "vite",
     "start": "electron .",
-    "electron-dev": "npm run dev & npm run start",
     "build": "electron-builder"
   },
   "build": {
