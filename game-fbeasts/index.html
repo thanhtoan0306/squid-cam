@@ -121,6 +121,33 @@
             }
           });
 
+          // Keyboard input for skills
+          this.input.keyboard.on('keydown-ONE', () => this.fireBreath());
+          this.input.keyboard.on('keydown-TWO', () => this.fireHomingBolt());
+          this.input.keyboard.on('keydown-THREE', () => this.fireLotusNova());
+
+          // Skill lock states
+          this.homingBoltUnlocked = false;
+          this.lotusNovaUnlocked = false;
+
+          // Keyboard input for unlocking skills
+          this.input.keyboard.on('keydown-TWO', () => {
+            this.homingBoltUnlocked = true;
+            this.showDamageText(
+              this.player.x,
+              this.player.y - 30,
+              'Homing Bolt Unlocked!'
+            );
+          });
+          this.input.keyboard.on('keydown-THREE', () => {
+            this.lotusNovaUnlocked = true;
+            this.showDamageText(
+              this.player.x,
+              this.player.y - 30,
+              'Lotus Nova Unlocked!'
+            );
+          });
+
           this.enemies = this.add.group();
 
           this.homingBolts = this.physics.add.group({
@@ -362,7 +389,7 @@
         }
 
         fireHomingBolt() {
-          if (this.gameOver) return;
+          if (!this.homingBoltUnlocked || this.gameOver) return;
           const e = this.findNearestEnemy();
           if (e) {
             const b = this.homingBolts.get(this.player.x + 15, this.player.y);
@@ -435,7 +462,7 @@
           }
         }
         fireLotusNova() {
-          if (this.gameOver) return;
+          if (!this.lotusNovaUnlocked || this.gameOver) return;
           const n = 24;
           for (let i = 0; i < n; i++) {
             const f = this.lotusFlowers.get(this.player.x, this.player.y);
