@@ -297,8 +297,28 @@
 
         fireBreath() {
           if (this.gameOver) return;
-          // Fixed 45-degree upward angle (up-right)
-          const angle = Phaser.Math.DegToRad(-15);
+          const nearestEnemy = this.findNearestEnemy();
+          if (!nearestEnemy) return;
+
+          // Calculate angle to enemy and clamp between -45 and 0 degrees
+          function getFireAngle(playerX, playerY, enemyX, enemyY) {
+            // Calculate angle in radians
+            let angleRad = Math.atan2(enemyY - playerY, enemyX - playerX);
+            // Convert to degrees
+            let angleDeg = angleRad * (180 / Math.PI);
+            // Clamp between -45 and 0
+            return Math.max(-45, Math.min(0, angleDeg));
+          }
+
+          const angle = Phaser.Math.DegToRad(
+            getFireAngle(
+              this.player.x,
+              this.player.y,
+              nearestEnemy.x,
+              nearestEnemy.y
+            )
+          );
+
           for (let i = 0; i < 5; i++) {
             const p = this.fireParticles.get(
               this.player.x + 10,
