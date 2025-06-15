@@ -169,32 +169,12 @@
             return;
           }
 
-          // Update enemy paths
+          // Move enemies straight, keep y constant
           this.enemies.getChildren().forEach((enemyContainer) => {
-            if (enemyContainer.active) {
-              const progress = enemyContainer.getData('pathProgress') + 0.005;
-              enemyContainer.setData('pathProgress', progress);
-
-              // Add slight sine wave movement for more dynamic paths
-              const laneIndex = enemyContainer.getData('laneIndex');
-              const baseLaneY = this.lanePositions[laneIndex];
-              const waveOffset = Math.sin(progress * 8) * 15;
-
-              // Gradually move toward player's lane as they approach
-              const playerLaneY = this.lanePositions[this.playerLaneIndex];
-              const convergeFactor = Math.max(
-                0,
-                (800 - enemyContainer.x) / 600
-              );
-              const targetY =
-                baseLaneY +
-                waveOffset +
-                (playerLaneY - baseLaneY) * convergeFactor * 0.3;
-
-              enemyContainer.y = Phaser.Math.Interpolation.Linear(
-                [enemyContainer.y, targetY],
-                0.05
-              );
+            if (enemyContainer.active && enemyContainer.body) {
+              // Only move horizontally, do not change y
+              enemyContainer.body.setVelocityX(-120);
+              // enemyContainer.y remains unchanged
             }
           });
         }
