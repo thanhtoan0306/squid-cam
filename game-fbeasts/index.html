@@ -103,10 +103,6 @@
             defaultKey: 'fire_particle',
             maxSize: 300,
           });
-          this.lotusFlowers = this.physics.add.group({
-            defaultKey: 'lotus',
-            maxSize: 200,
-          });
 
           // Add gravity for more realistic projectile physics
           this.physics.world.gravity.y = 300;
@@ -114,13 +110,6 @@
           // --- Setup Collisions ---
           this.physics.add.overlap(
             this.fireParticles,
-            this.enemies,
-            this.handleProjectileHit,
-            null,
-            this
-          );
-          this.physics.add.overlap(
-            this.lotusFlowers,
             this.enemies,
             this.handleProjectileHit,
             null,
