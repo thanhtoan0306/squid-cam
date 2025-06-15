@@ -64,10 +64,16 @@
           enemyGraphics.destroy();
 
           const homingProjectileGraphics = this.make.graphics({
-            fillStyle: { color: 0xcc00ff },
+            fillStyle: { color: 0x00ffff },
           });
-          homingProjectileGraphics.fillCircle(4, 4, 4);
-          homingProjectileGraphics.generateTexture('homing_bolt', 8, 8);
+          homingProjectileGraphics.fillRect(0, 3, 12, 2);
+          homingProjectileGraphics.beginPath();
+          homingProjectileGraphics.moveTo(12, 0);
+          homingProjectileGraphics.lineTo(16, 4);
+          homingProjectileGraphics.lineTo(12, 8);
+          homingProjectileGraphics.closePath();
+          homingProjectileGraphics.fillPath();
+          homingProjectileGraphics.generateTexture('homing_bolt', 16, 8);
           homingProjectileGraphics.destroy();
 
           const fireParticleGraphics = this.make.graphics({
@@ -129,6 +135,9 @@
             defaultKey: 'lotus',
             maxSize: 200,
           });
+
+          // Add gravity for more realistic projectile physics
+          this.physics.world.gravity.y = 300;
 
           // --- Setup Collisions ---
           this.physics.add.overlap(
@@ -325,10 +334,34 @@
           if (this.gameOver) return;
           const e = this.findNearestEnemy();
           if (e) {
-            const b = this.homingBolts.get(this.player.x, this.player.y);
+            const b = this.homingBolts.get(this.player.x + 15, this.player.y);
             if (b) {
               b.setActive(true).setVisible(true);
-              this.physics.moveToObject(b, e, 600);
+              b.body.setAllowGravity(true);
+              // Calculate arc trajectory
+              const distance = Phaser.Math.Distance.Between(
+                this.player.x,
+                this.player.y,
+                e.x,
+                e.y
+              );
+              const angle = Phaser.Math.Angle.Between(
+                this.player.x,
+                this.player.y,
+                e.x,
+                e.y
+              );
+              const velocity = Math.min(600 + distance * 0.5, 800);
+              const arcAngle = angle - 0.2; // Slight upward arc
+              b.setRotation(arcAngle);
+              this.physics.velocityFromRotation(
+                arcAngle,
+                velocity,
+                b.body.velocity
+              );
+              this.time.delayedCall(2000, () => {
+                if (b.active) b.destroy();
+              });
             }
           }
         }
@@ -336,34 +369,56 @@
           if (this.gameOver) return;
           const e = this.findNearestEnemy();
           if (e) {
-            for (let i = 0; i < 5; i++) {
-              const p = this.fireParticles.get(this.player.x, this.player.y);
+            for (let i = 0; i < 7; i++) {
+              const p = this.fireParticles.get(
+                this.player.x + 10,
+                this.player.y + Phaser.Math.Between(-5, 5)
+              );
               if (p) {
                 p.setActive(true).setVisible(true);
-                const a =
-                  Phaser.Math.Angle.Between(
-                    this.player.x,
-                    this.player.y,
-                    e.x,
-                    e.y
-                  ) + Phaser.Math.FloatBetween(-0.4, 0.4);
-                this.physics.velocityFromRotation(a, 500, p.body.velocity);
-                this.time.delayedCall(800, () => p.destroy());
+                p.body.setAllowGravity(true);
+                const baseAngle = Phaser.Math.Angle.Between(
+                  this.player.x,
+                  this.player.y,
+                  e.x,
+                  e.y
+                );
+                const spread = Phaser.Math.FloatBetween(-0.6, 0.6);
+                const arcAngle = baseAngle + spread - 0.15; // Slight arc
+                const velocity = Phaser.Math.Between(400, 600);
+                this.physics.velocityFromRotation(
+                  arcAngle,
+                  velocity,
+                  p.body.velocity
+                );
+                this.time.delayedCall(1200, () => {
+                  if (p.active) p.destroy();
+                });
               }
             }
           }
         }
         fireLotusNova() {
           if (this.gameOver) return;
-          const n = 48;
+          const n = 36;
           for (let i = 0; i < n; i++) {
             const f = this.lotusFlowers.get(this.player.x, this.player.y);
             if (f) {
               f.setActive(true).setVisible(true);
+              f.body.setAllowGravity(true);
               const a = (i / n) * 2 * Math.PI;
+              const velocity = Phaser.Math.Between(300, 500);
+              // Add slight upward component for arc effect
+              const arcAngle = a - 0.3;
               f.setRotation(a + Math.PI / 2);
-              this.physics.velocityFromRotation(a, 400, f.body.velocity);
-              this.time.delayedCall(2000, () => f.destroy());
+              this.physics.velocityFromRotation(
+                arcAngle,
+                velocity,
+                f.body.velocity
+              );
+              this.time.delayedCall(2500, () => {
+                if (f.active) f.destroy();
+              });
             }
           }
         }
