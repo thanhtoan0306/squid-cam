@@ -70,21 +70,6 @@
           fireParticleGraphics.generateTexture('fire_particle', 6, 6);
           fireParticleGraphics.destroy();
 
-          const lotusGraphics = this.make.graphics({
-            fillStyle: { color: 0xff69b4 },
-          });
-          lotusGraphics.slice(
-            8,
-            8,
-            8,
-            Phaser.Math.DegToRad(270),
-            Phaser.Math.DegToRad(90),
-            true
-          );
-          lotusGraphics.fillPath();
-          lotusGraphics.generateTexture('lotus', 16, 16);
-          lotusGraphics.destroy();
-
           // --- Setup Game World ---
           this.cameras.main.setBackgroundColor('#006400');
 
@@ -133,12 +118,6 @@
           this.time.addEvent({
             delay: 100,
             callback: this.fireBreath,
-            callbackScope: this,
-            loop: true,
-          });
-          this.time.addEvent({
-            delay: 3000,
-            callback: this.fireLotusNova,
             callbackScope: this,
             loop: true,
           });
@@ -370,31 +349,7 @@
           // Increase gravity for more curve (set once, not every shot)
           this.physics.world.gravity.y = 800; // Increase as needed for more arc
         }
-        fireLotusNova() {
-          if (!this.lotusNovaUnlocked || this.gameOver) return;
-          const n = 24;
-          for (let i = 0; i < n; i++) {
-            const f = this.lotusFlowers.get(this.player.x, this.player.y);
-            if (f) {
-              f.setActive(true).setVisible(true);
-              f.body.setAllowGravity(true);
 
-              const a = (i / n) * 2 * Math.PI;
-              const velocity = Phaser.Math.Between(400, 600);
-              // Create high arcing shots
-              const arcAngle = a - 0.5; // Strong upward arc
-              f.setRotation(a + Math.PI / 2);
-              this.physics.velocityFromRotation(
-                arcAngle,
-                velocity,
-                f.body.velocity
-              );
-              this.time.delayedCall(2800, () => {
-                if (f.active) f.destroy();
-              });
-            }
-          }
-        }
         showDamageText(x, y, d) {
           const t = this.add
             .text(x, y, `-${d}`, {
