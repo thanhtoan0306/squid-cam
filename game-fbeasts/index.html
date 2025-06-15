@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Phaser - Thôn Phệ Dị Biên Style Game</title>
+    <title>Phaser - Lane Defense Game</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
       body {
@@ -93,19 +93,21 @@
           // --- Setup Game World ---
           this.cameras.main.setBackgroundColor('#006400');
 
-          // Player setup
+          // Player setup - **CHANGED**
+          // Start player on the left side of the screen
           this.player = this.physics.add
-            .sprite(400, 300, 'player')
-            .setCollideWorldBounds(true);
+            .sprite(100, 300, 'player')
+            .setCollideWorldBounds(true)
+            .setImmovable(true); // Player cannot be pushed by enemies
           this.player.body.setCircle(10);
 
           // Input setup
-          this.cursors = this.input.keyboard.addKeys('W,A,S,D');
+          this.cursors = this.input.keyboard.addKeys('W,S'); // Only need W and S for vertical movement
 
           // Groups for physics objects
           this.enemies = this.physics.add.group({
             key: 'enemy',
-            runChildUpdate: true, // Allows each enemy to have its own update loop
+            runChildUpdate: true,
           });
 
           this.homingBolts = this.physics.add.group({
@@ -198,15 +200,10 @@
             return;
           }
 
-          // --- Player Movement ---
+          // --- Player Movement - **CHANGED** ---
+          // Player can now only move up and down
           this.player.setVelocity(0);
           const speed = 200;
-
-          if (this.cursors.A.isDown) {
-            this.player.setVelocityX(-speed);
-          } else if (this.cursors.D.isDown) {
-            this.player.setVelocityX(speed);
-          }
 
           if (this.cursors.W.isDown) {
             this.player.setVelocityY(-speed);
@@ -214,18 +211,9 @@
             this.player.setVelocityY(speed);
           }
 
-          // Normalize speed for diagonal movement
-          this.player.body.velocity.normalize().scale(speed);
-
           // --- Make Enemies Face Player ---
           this.enemies.getChildren().forEach((enemy) => {
-            const angle = Phaser.Math.Angle.Between(
-              enemy.x,
-              enemy.y,
-              this.player.x,
-              this.player.y
-            );
-            enemy.setRotation(angle);
+            // No need to set rotation in this game style, but moving towards player is key
             this.physics.moveToObject(enemy, this.player, 80); // 80 is enemy speed
           });
         }
@@ -233,29 +221,12 @@
         // --- Helper Functions ---
 
         spawnEnemy() {
+          // **FUNCTION REWRITTEN**
           if (this.gameOver) return;
 
-          const edge = Math.floor(Math.random() * 4);
-          let x, y;
-
-          switch (edge) {
-            case 0: // Top
-              x = Phaser.Math.Between(0, 800);
-              y = -20;
-              break;
-            case 1: // Right
-              x = 820;
-              y = Phaser.Math.Between(0, 600);
-              break;
-            case 2: // Bottom
-              x = Phaser.Math.Between(0, 800);
-              y = 620;
-              break;
-            case 3: // Left
-              x = -20;
-              y = Phaser.Math.Between(0, 600);
-              break;
-          }
+          // Spawn enemies only from the right edge
+          const x = 820; // Just off the right side of the screen (width is 800)
+          const y = Phaser.Math.Between(50, 550); // Random Y position within a reasonable range
 
           const enemy = this.enemies.create(x, y, 'enemy');
           enemy.body.setCircle(8);
@@ -319,7 +290,6 @@
                   350,
                   particle.body.velocity
                 );
-                // Destroy particle after some time
                 this.time.delayedCall(500, () => particle.destroy());
               }
             }
@@ -329,19 +299,18 @@
         fireLotusNova() {
           if (this.gameOver) return;
 
-          const numFlowers = 36; // Number of projectiles in the circle
+          const numFlowers = 36;
           for (let i = 0; i < numFlowers; i++) {
             const flower = this.lotusFlowers.get(this.player.x, this.player.y);
             if (flower) {
               flower.setActive(true).setVisible(true);
               const angle = (i / numFlowers) * 2 * Math.PI;
-              flower.setRotation(angle + Math.PI / 2); // Align sprite with direction
+              flower.setRotation(angle + Math.PI / 2);
               this.physics.velocityFromRotation(
                 angle,
                 250,
                 flower.body.velocity
               );
-              // Destroy flower after some time
               this.time.delayedCall(1500, () => flower.destroy());
             }
           }
@@ -370,14 +339,14 @@
         }
 
         handleProjectileHit(projectile, enemy) {
-          projectile.destroy(); // Remove the projectile
+          projectile.destroy();
 
           let health = enemy.getData('health') - 1;
           enemy.setData('health', health);
-          this.showDamageText(enemy.x, enemy.y, 666); // Show damage text like in the ad
+          this.showDamageText(enemy.x, enemy.y, 666);
 
           if (health <= 0) {
-            enemy.destroy(); // Remove the enemy
+            enemy.destroy();
             this.score += 10;
             this.scoreText.setText('Score: ' + this.score);
           }
@@ -390,7 +359,6 @@
           this.physics.pause();
           player.setTint(0xff0000);
 
-          // Game Over Text
           this.add
             .text(400, 250, 'GAME OVER', {
               fontSize: '64px',
