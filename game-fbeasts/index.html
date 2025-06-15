@@ -229,6 +229,18 @@
             stroke: '#000',
             strokeThickness: 4,
           });
+
+          // --- Lane Indicators ---
+          const laneColor = 0xff9900; // orange
+          for (let i = 0; i < this.lanePositions.length; i++) {
+            const y = this.lanePositions[i];
+            const laneGraphics = this.add.graphics();
+            laneGraphics.lineStyle(4, laneColor, 0.5);
+            laneGraphics.beginPath();
+            laneGraphics.moveTo(80, y);
+            laneGraphics.lineTo(720, y);
+            laneGraphics.strokePath();
+          }
         }
 
         update() {
