@@ -44,8 +44,8 @@
           this.gameOver = false;
           this.score = 0;
 
-          this.lanePositions = [150, 250, 350, 450];
-          this.playerLaneIndex = 1;
+          this.lanePositions = [180, 300, 420]; // 3 lanes, evenly spaced
+          this.playerLaneIndex = 1; // middle lane by default
 
           // --- Create Graphics for Sprites ---
           const playerGraphics = this.make.graphics({
@@ -198,19 +198,19 @@
 
           // --- Timers ---
           this.time.addEvent({
-            delay: 200,
+            delay: 50,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true,
           });
           this.time.addEvent({
-            delay: 200,
+            delay: 330,
             callback: this.fireHomingBolt,
             callbackScope: this,
             loop: true,
           });
           this.time.addEvent({
-            delay: 500,
+            delay: 100,
             callback: this.fireBreath,
             callbackScope: this,
             loop: true,
