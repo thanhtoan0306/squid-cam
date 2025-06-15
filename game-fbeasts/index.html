@@ -63,19 +63,6 @@
           enemyGraphics.generateTexture('enemy', 16, 16);
           enemyGraphics.destroy();
 
-          const homingProjectileGraphics = this.make.graphics({
-            fillStyle: { color: 0x00ffff },
-          });
-          homingProjectileGraphics.fillRect(0, 3, 12, 2);
-          homingProjectileGraphics.beginPath();
-          homingProjectileGraphics.moveTo(12, 0);
-          homingProjectileGraphics.lineTo(16, 4);
-          homingProjectileGraphics.lineTo(12, 8);
-          homingProjectileGraphics.closePath();
-          homingProjectileGraphics.fillPath();
-          homingProjectileGraphics.generateTexture('homing_bolt', 16, 8);
-          homingProjectileGraphics.destroy();
-
           const fireParticleGraphics = this.make.graphics({
             fillStyle: { color: 0xffa500 },
           });
@@ -107,53 +94,11 @@
           this.player.body.setCircle(10);
           this.player.body.setAllowGravity(false);
 
-          this.input.keyboard.on('keydown-W', () => {
-            if (!this.gameOver && this.playerLaneIndex > 0) {
-              this.playerLaneIndex--;
-            }
-          });
-          this.input.keyboard.on('keydown-S', () => {
-            if (
-              !this.gameOver &&
-              this.playerLaneIndex < this.lanePositions.length - 1
-            ) {
-              this.playerLaneIndex++;
-            }
-          });
-
           // Keyboard input for skills
           this.input.keyboard.on('keydown-ONE', () => this.fireBreath());
-          this.input.keyboard.on('keydown-TWO', () => this.fireHomingBolt());
-          this.input.keyboard.on('keydown-THREE', () => this.fireLotusNova());
-
-          // Skill lock states
-          this.homingBoltUnlocked = false;
-          this.lotusNovaUnlocked = false;
-
-          // Keyboard input for unlocking skills
-          this.input.keyboard.on('keydown-TWO', () => {
-            this.homingBoltUnlocked = true;
-            this.showDamageText(
-              this.player.x,
-              this.player.y - 30,
-              'Homing Bolt Unlocked!'
-            );
-          });
-          this.input.keyboard.on('keydown-THREE', () => {
-            this.lotusNovaUnlocked = true;
-            this.showDamageText(
-              this.player.x,
-              this.player.y - 30,
-              'Lotus Nova Unlocked!'
-            );
-          });
 
           this.enemies = this.add.group();
 
-          this.homingBolts = this.physics.add.group({
-            defaultKey: 'homing_bolt',
-            maxSize: 100,
-          });
           this.fireParticles = this.physics.add.group({
             defaultKey: 'fire_particle',
             maxSize: 300,
@@ -167,13 +112,6 @@
           this.physics.world.gravity.y = 300;
 
           // --- Setup Collisions ---
-          this.physics.add.overlap(
-            this.homingBolts,
-            this.enemies,
-            this.handleProjectileHit,
-            null,
-            this
-          );
           this.physics.add.overlap(
             this.fireParticles,
             this.enemies,
@@ -200,12 +138,6 @@
           this.time.addEvent({
             delay: 50,
             callback: this.spawnEnemy,
-            callbackScope: this,
-            loop: true,
-          });
-          this.time.addEvent({
-            delay: 330,
-            callback: this.fireHomingBolt,
             callbackScope: this,
             loop: true,
           });
@@ -247,12 +179,6 @@
           if (this.gameOver) {
             return;
           }
-
-          const targetY = this.lanePositions[this.playerLaneIndex];
-          this.player.y = Phaser.Math.Interpolation.Linear(
-            [this.player.y, targetY],
-            0.2
-          );
 
           // Update enemy paths
           this.enemies.getChildren().forEach((enemyContainer) => {
@@ -400,50 +326,6 @@
           this.input.once('pointerdown', () => this.scene.restart());
         }
 
-        fireHomingBolt() {
-          if (!this.homingBoltUnlocked || this.gameOver) return;
-          const e = this.findNearestEnemy();
-          if (e) {
-            const b = this.homingBolts.get(this.player.x + 15, this.player.y);
-            if (b) {
-              b.setActive(true).setVisible(true);
-              b.body.setAllowGravity(true);
-
-              // Calculate parabolic trajectory to intercept enemy path
-              const distance = Phaser.Math.Distance.Between(
-                this.player.x,
-                this.player.y,
-                e.x,
-                e.y
-              );
-              const timeToTarget = distance / 400; // Base speed for calculation
-
-              // Predict where enemy will be
-              const futureX = e.x - e.body.velocity.x * timeToTarget;
-              const futureY = e.y;
-
-              // Calculate high arc trajectory
-              const dx = futureX - this.player.x;
-              const dy = futureY - this.player.y;
-              const angle = Math.atan2(dy, dx);
-              const launchAngle = angle - 0.4; // High arc
-
-              const velocity =
-                Math.sqrt(dx * dx + (dy + 200) * (dy + 200)) / timeToTarget;
-              const clampedVelocity = Math.min(Math.max(velocity, 500), 900);
-
-              b.setRotation(launchAngle);
-              this.physics.velocityFromRotation(
-                launchAngle,
-                clampedVelocity,
-                b.body.velocity
-              );
-              this.time.delayedCall(3000, () => {
-                if (b.active) b.destroy();
-              });
-            }
-          }
-        }
         fireBreath() {
           if (this.gameOver) return;
           // Fixed 45-degree upward angle (up-right)
