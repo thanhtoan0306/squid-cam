@@ -98,14 +98,14 @@
           this.input.keyboard.on('keydown-ONE', () => this.fireBreath());
 
           this.enemies = this.add.group();
-
+          1;
           this.fireParticles = this.physics.add.group({
             defaultKey: 'fire_particle',
             maxSize: 300,
           });
 
           // Add gravity for more realistic projectile physics
-          this.physics.world.gravity.y = 300;
+          this.physics.world.gravity.y = 600; // Default is 300, try doubling
 
           // --- Setup Collisions ---
           this.physics.add.overlap(
@@ -125,7 +125,7 @@
 
           // --- Timers ---
           this.time.addEvent({
-            delay: 50,
+            delay: 80,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true,
@@ -343,6 +343,32 @@
               });
             }
           }
+
+          const angleDeg = -15;
+          const angleRad = Phaser.Math.DegToRad(angleDeg);
+
+          // Adjust speed for more curve (lower speed = more curve)
+          const speed = 350; // Try lowering this for more curve
+
+          // Calculate velocity components
+          const velocityX = Math.cos(angleRad) * speed;
+          const velocityY = Math.sin(angleRad) * speed;
+
+          // Create projectile
+          const projectile = this.fireParticles.get(
+            this.player.x,
+            this.player.y,
+            'fire_particle'
+          );
+          if (projectile) {
+            projectile.setActive(true).setVisible(true);
+            projectile.body.allowGravity = true; // Enable gravity for curve
+            projectile.body.velocity.x = velocityX;
+            projectile.body.velocity.y = velocityY;
+          }
+
+          // Increase gravity for more curve (set once, not every shot)
+          this.physics.world.gravity.y = 800; // Increase as needed for more arc
         }
         fireLotusNova() {
           if (!this.lotusNovaUnlocked || this.gameOver) return;
