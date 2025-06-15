@@ -102,7 +102,7 @@
           this.cameras.main.setBackgroundColor('#006400');
 
           this.player = this.physics.add
-            .sprite(200, this.lanePositions[this.playerLaneIndex], 'player')
+            .sprite(50, this.lanePositions[this.playerLaneIndex], 'player')
             .setImmovable(true);
           this.player.body.setCircle(10);
           this.player.body.setAllowGravity(false);
@@ -171,25 +171,25 @@
 
           // --- Timers ---
           this.time.addEvent({
-            delay: 750,
+            delay: 300,
             callback: this.spawnEnemy,
             callbackScope: this,
             loop: true,
           });
           this.time.addEvent({
-            delay: 250,
+            delay: 150,
             callback: this.fireHomingBolt,
             callbackScope: this,
             loop: true,
           });
           this.time.addEvent({
-            delay: 50,
+            delay: 80,
             callback: this.fireBreath,
             callbackScope: this,
             loop: true,
           });
           this.time.addEvent({
-            delay: 4000,
+            delay: 3000,
             callback: this.fireLotusNova,
             callbackScope: this,
             loop: true,
@@ -214,6 +214,35 @@
             [this.player.y, targetY],
             0.2
           );
+
+          // Update enemy paths
+          this.enemies.getChildren().forEach((enemyContainer) => {
+            if (enemyContainer.active) {
+              const progress = enemyContainer.getData('pathProgress') + 0.005;
+              enemyContainer.setData('pathProgress', progress);
+
+              // Add slight sine wave movement for more dynamic paths
+              const laneIndex = enemyContainer.getData('laneIndex');
+              const baseLaneY = this.lanePositions[laneIndex];
+              const waveOffset = Math.sin(progress * 8) * 15;
+
+              // Gradually move toward player's lane as they approach
+              const playerLaneY = this.lanePositions[this.playerLaneIndex];
+              const convergeFactor = Math.max(
+                0,
+                (800 - enemyContainer.x) / 600
+              );
+              const targetY =
+                baseLaneY +
+                waveOffset +
+                (playerLaneY - baseLaneY) * convergeFactor * 0.3;
+
+              enemyContainer.y = Phaser.Math.Interpolation.Linear(
+                [enemyContainer.y, targetY],
+                0.05
+              );
+            }
+          });
         }
 
         spawnEnemy() {
@@ -244,8 +273,10 @@
 
           enemyContainer.setData('health', MAX_ENEMY_HP);
           enemyContainer.setData('hpBar', hpBar);
+          enemyContainer.setData('laneIndex', laneIndex);
+          enemyContainer.setData('pathProgress', 0);
 
-          enemyContainer.body.setVelocityX(-100);
+          enemyContainer.body.setVelocityX(-120);
           enemyContainer.body.setAllowGravity(false);
 
           this.enemies.add(enemyContainer);
@@ -338,28 +369,37 @@
             if (b) {
               b.setActive(true).setVisible(true);
               b.body.setAllowGravity(true);
-              // Calculate arc trajectory
+
+              // Calculate parabolic trajectory to intercept enemy path
               const distance = Phaser.Math.Distance.Between(
                 this.player.x,
                 this.player.y,
                 e.x,
                 e.y
               );
-              const angle = Phaser.Math.Angle.Between(
-                this.player.x,
-                this.player.y,
-                e.x,
-                e.y
-              );
-              const velocity = Math.min(600 + distance * 0.5, 800);
-              const arcAngle = angle - 0.2; // Slight upward arc
-              b.setRotation(arcAngle);
+              const timeToTarget = distance / 400; // Base speed for calculation
+
+              // Predict where enemy will be
+              const futureX = e.x - e.body.velocity.x * timeToTarget;
+              const futureY = e.y;
+
+              // Calculate high arc trajectory
+              const dx = futureX - this.player.x;
+              const dy = futureY - this.player.y;
+              const angle = Math.atan2(dy, dx);
+              const launchAngle = angle - 0.4; // High arc
+
+              const velocity =
+                Math.sqrt(dx * dx + (dy + 200) * (dy + 200)) / timeToTarget;
+              const clampedVelocity = Math.min(Math.max(velocity, 500), 900);
+
+              b.setRotation(launchAngle);
               this.physics.velocityFromRotation(
-                arcAngle,
-                velocity,
+                launchAngle,
+                clampedVelocity,
                 b.body.velocity
               );
-              this.time.delayedCall(2000, () => {
+              this.time.delayedCall(3000, () => {
                 if (b.active) b.destroy();
               });
             }
@@ -369,29 +409,32 @@
           if (this.gameOver) return;
           const e = this.findNearestEnemy();
           if (e) {
-            for (let i = 0; i < 7; i++) {
+            for (let i = 0; i < 5; i++) {
               const p = this.fireParticles.get(
                 this.player.x + 10,
-                this.player.y + Phaser.Math.Between(-5, 5)
+                this.player.y + Phaser.Math.Between(-8, 8)
               );
               if (p) {
                 p.setActive(true).setVisible(true);
                 p.body.setAllowGravity(true);
+
+                // Spread pattern with parabolic arcs
+                const spreadAngle = (i - 2) * 0.3; // -0.6 to +0.6 radians
                 const baseAngle = Phaser.Math.Angle.Between(
                   this.player.x,
                   this.player.y,
                   e.x,
                   e.y
                 );
-                const spread = Phaser.Math.FloatBetween(-0.6, 0.6);
-                const arcAngle = baseAngle + spread - 0.15; // Slight arc
-                const velocity = Phaser.Math.Between(400, 600);
+                const launchAngle = baseAngle + spreadAngle - 0.25; // Arc upward
+
+                const velocity = Phaser.Math.Between(450, 650);
                 this.physics.velocityFromRotation(
-                  arcAngle,
+                  launchAngle,
                   velocity,
                   p.body.velocity
                 );
-                this.time.delayedCall(1200, () => {
+                this.time.delayedCall(1500, () => {
                   if (p.active) p.destroy();
                 });
               }
@@ -400,23 +443,24 @@
         }
         fireLotusNova() {
           if (this.gameOver) return;
-          const n = 36;
+          const n = 24;
           for (let i = 0; i < n; i++) {
             const f = this.lotusFlowers.get(this.player.x, this.player.y);
             if (f) {
               f.setActive(true).setVisible(true);
               f.body.setAllowGravity(true);
+
               const a = (i / n) * 2 * Math.PI;
-              const velocity = Phaser.Math.Between(300, 500);
-              // Add slight upward component for arc effect
-              const arcAngle = a - 0.3;
+              const velocity = Phaser.Math.Between(400, 600);
+              // Create high arcing shots
+              const arcAngle = a - 0.5; // Strong upward arc
               f.setRotation(a + Math.PI / 2);
               this.physics.velocityFromRotation(
                 arcAngle,
                 velocity,
                 f.body.velocity
               );
-              this.time.delayedCall(2500, () => {
+              this.time.delayedCall(2800, () => {
                 if (f.active) f.destroy();
               });
             }
