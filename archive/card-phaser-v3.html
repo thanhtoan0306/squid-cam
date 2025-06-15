@@ -324,6 +324,10 @@
 
           // Start the freeze cycle
           this.startFreezeEffects();
+
+          // Create lotus petal texture and nova effect
+          this.createLotusPetalTexture();
+          this.createLotusNova();
         }
 
         createFrozenBackground() {
@@ -668,6 +672,40 @@
           // Frost particle burst
           this.frostEmitter.setPosition(crystal.x, crystal.y);
           this.frostEmitter.explode(8);
+        }
+
+        createLotusPetalTexture() {
+          // Draw a simple lotus petal shape as a texture
+          const g = this.add.graphics();
+          g.fillStyle(0xffb6e6, 1);
+          g.beginPath();
+          g.moveTo(16, 0);
+          g.bezierCurveTo(32, 16, 24, 48, 16, 56);
+          g.bezierCurveTo(8, 48, 0, 16, 16, 0);
+          g.closePath();
+          g.fillPath();
+          g.generateTexture('lotusPetal', 32, 64);
+          g.destroy();
+        }
+
+        createLotusNova() {
+          const { width, height } = this.sys.game.config;
+          // Create falling lotus petals from top-left, moving diagonally (45deg)
+          this.lotusEmitter = this.add.particles('lotusPetal', {
+            x: { min: -40, max: width * 0.2 }, // start from left edge
+            y: { min: -60, max: 0 }, // start from top edge
+            speedX: { min: 60, max: 120 }, // rightward
+            speedY: { min: 60, max: 120 }, // downward
+            angle: { min: 30, max: 60 }, // tilt petals
+            scale: { min: 0.3, max: 0.7 },
+            alpha: { min: 0.7, max: 1 },
+            rotate: { min: -30, max: 30 },
+            lifespan: 4000,
+            frequency: 120,
+            quantity: 2,
+            gravityY: 0,
+            tint: [0xffb6e6, 0xf7e1ff, 0xf9c6e0],
+          });
         }
 
         update() {
