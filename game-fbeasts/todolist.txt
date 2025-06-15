@@ -1,0 +1,4 @@
+1. parabol fall
+2. enemy hp
+3. llimit bullet range
+
