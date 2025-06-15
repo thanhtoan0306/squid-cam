@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Advanced Lightning Effect</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: #1a1a1a;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        scene: {
+          create: create,
+        },
+      };
+
+      const game = new Phaser.Game(config);
+
+      function create() {
+        // Create a card shape
+        const card = this.add.graphics();
+        card.lineStyle(2, 0x4a90e2);
+        card.fillStyle(0x2c3e50, 1);
+        card.fillRect(300, 200, 200, 300);
+        card.strokeRect(300, 200, 200, 300);
+
+        // Make card interactive
+        const cardZone = this.add.zone(400, 350, 200, 300);
+        cardZone.setInteractive();
+
+        // Create graphics for lightning
+        const lightningGroup = this.add.group();
+
+        cardZone.on('pointerdown', () => {
+          // Create multiple lightning bolts
+          for (let j = 0; j < 3; j++) {
+            const lightning = this.add.graphics();
+            lightningGroup.add(lightning);
+
+            // Random color for each bolt
+            const colors = [0x00ffff, 0xff00ff, 0xffff00];
+            lightning.lineStyle(2, colors[j]);
+
+            // Starting points with offset
+            let x = 400 + Phaser.Math.Between(-50, 50);
+            let y = 200;
+
+            lightning.beginPath();
+            lightning.moveTo(x, y);
+
+            // Create more complex lightning pattern
+            let segmentCount = 15;
+            let lastX = x;
+            let lastY = y;
+
+            for (let i = 0; i < segmentCount; i++) {
+              // Create branching effect
+              if (i > 0 && i % 5 === 0) {
+                const branch = this.add.graphics();
+                branch.lineStyle(1, colors[j], 0.7);
+                branch.beginPath();
+                branch.moveTo(lastX, lastY);
+
+                // Draw branch
+                for (let b = 0; b < 3; b++) {
+                  lastX += Phaser.Math.Between(-30, 30);
+                  lastY += Phaser.Math.Between(10, 30);
+                  branch.lineTo(lastX, lastY);
+                }
+                branch.strokePath();
+
+                // Fade out branch
+                this.tweens.add({
+                  targets: branch,
+                  alpha: 0,
+                  duration: 300,
+                  ease: 'Power2',
+                  onComplete: () => branch.destroy(),
+                });
+              }
+
+              // Main bolt
+              x += Phaser.Math.Between(-25, 25);
+              y += Phaser.Math.Between(10, 30);
+              lightning.lineTo(x, y);
+              lastX = x;
+              lastY = y;
+            }
+
+            lightning.strokePath();
+
+            // Add glow effect
+            const glow = this.add.graphics();
+            glow.lineStyle(4, colors[j], 0.2);
+            glow.strokeLineShape(lightning);
+
+            // Fade out effects
+            this.tweens.add({
+              targets: [lightning, glow],
+              alpha: 0,
+              duration: 400,
+              ease: 'Power2',
+              onComplete: () => {
+                lightning.destroy();
+                glow.destroy();
+              },
+            });
+          }
+        });
+      }
+    </script>
+  </body>
+</html>

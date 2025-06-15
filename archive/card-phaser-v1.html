@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lightning Card - Phaser 3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.70.0/phaser.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #0a0a2e, #16213e, #1a1a2e);
+        font-family: 'Arial', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      .game-container {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0, 150, 255, 0.3);
+      }
+
+      .card-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      .cost-circle {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(145deg, #e6f3ff, #b3d9ff);
+        border: 3px solid #0066cc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        font-weight: bold;
+        color: #003366;
+        box-shadow: 0 6px 15px rgba(0, 102, 204, 0.4);
+        animation: electricPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes electricPulse {
+        0%,
+        100% {
+          box-shadow: 0 6px 15px rgba(0, 102, 204, 0.4);
+        }
+        50% {
+          box-shadow: 0 6px 25px rgba(0, 150, 255, 0.8);
+        }
+      }
+
+      .card-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(0, 0, 0, 0.9) 40%
+        );
+        padding: 80px 20px 20px;
+        color: white;
+      }
+
+      .card-name {
+        font-size: 28px;
+        font-weight: bold;
+        color: #00ccff;
+        text-align: center;
+        margin-bottom: 15px;
+        text-shadow: 0 0 10px rgba(0, 204, 255, 0.8),
+          2px 2px 4px rgba(0, 0, 0, 0.8);
+        animation: electricFlicker 3s ease-in-out infinite;
+      }
+
+      @keyframes electricFlicker {
+        0%,
+        90%,
+        100% {
+          opacity: 1;
+        }
+        95% {
+          opacity: 0.8;
+        }
+      }
+
+      .card-text {
+        font-size: 14px;
+        line-height: 1.5;
+        text-align: center;
+        color: #e0e6ff;
+        background: rgba(0, 30, 60, 0.4);
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid rgba(0, 150, 255, 0.3);
+        backdrop-filter: blur(5px);
+      }
+
+      .highlight {
+        color: #00ffff;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(0, 255, 255, 0.6);
+      }
+
+      .element-icon {
+        position: absolute;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 35px;
+        height: 35px;
+        background: linear-gradient(45deg, #0066ff, #00ccff);
+        clip-path: polygon(
+          50% 0%,
+          20% 35%,
+          0% 35%,
+          30% 60%,
+          20% 100%,
+          50% 75%,
+          80% 100%,
+          70% 60%,
+          100% 35%,
+          80% 35%
+        );
+        animation: lightningGlow 1.5s ease-in-out infinite alternate;
+      }
+
+      @keyframes lightningGlow {
+        0% {
+          filter: brightness(1) drop-shadow(0 0 5px rgba(0, 204, 255, 0.6));
+          transform: translateX(-50%) scale(1);
+        }
+        100% {
+          filter: brightness(1.5) drop-shadow(0 0 15px rgba(0, 255, 255, 1));
+          transform: translateX(-50%) scale(1.1);
+        }
+      }
+
+      .element-text {
+        position: absolute;
+        bottom: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 10px;
+        font-weight: bold;
+        color: #00ccff;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div id="phaser-game"></div>
+      <div class="card-overlay">
+        <div class="cost-circle">3</div>
+        <div class="card-info">
+          <div class="card-name">Thunder Strike</div>
+          <div class="card-text">
+            Deal <span class="highlight">4 damage</span> to target enemy.<br />
+            If enemy is <span class="highlight">wet</span>, deal<br />
+            <span class="highlight">6 damage</span> instead and<br />
+            <span class="highlight">stun</span> for 1 turn.
+          </div>
+          <div class="element-icon">
+            <div class="element-text">LIGHTNING</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class LightningCard extends Phaser.Scene {
+        constructor() {
+          super({ key: 'LightningCard' });
+          this.lightningBolts = [];
+          this.particles = [];
+          this.stormClouds = [];
+        }
+
+        preload() {
+          // Create textures programmatically
+          this.createTextures();
+        }
+
+        createTextures() {
+          // Lightning bolt texture
+          const lightningGraphics = this.add.graphics();
+          lightningGraphics.lineStyle(4, 0x00ffff, 1);
+          lightningGraphics.beginPath();
+          lightningGraphics.moveTo(0, 0);
+          lightningGraphics.lineTo(10, 30);
+          lightningGraphics.lineTo(-5, 35);
+          lightningGraphics.lineTo(15, 70);
+          lightningGraphics.lineTo(0, 100);
+          lightningGraphics.strokePath();
+          lightningGraphics.generateTexture('lightning', 20, 100);
+          lightningGraphics.destroy();
+
+          // Particle texture
+          const particleGraphics = this.add.graphics();
+          particleGraphics.fillStyle(0x66ddff, 1);
+          particleGraphics.fillCircle(2, 2, 2);
+          particleGraphics.generateTexture('spark', 4, 4);
+          particleGraphics.destroy();
+
+          // Cloud texture
+          const cloudGraphics = this.add.graphics();
+          cloudGraphics.fillStyle(0x2a2a4a, 0.8);
+          cloudGraphics.fillCircle(20, 15, 15);
+          cloudGraphics.fillCircle(35, 15, 18);
+          cloudGraphics.fillCircle(50, 15, 15);
+          cloudGraphics.generateTexture('cloud', 70, 30);
+          cloudGraphics.destroy();
+        }
+
+        create() {
+          const { width, height } = this.sys.game.config;
+
+          // Background storm effect
+          this.createStormBackground();
+
+          // Create floating storm clouds
+          this.createStormClouds();
+
+          // Create particle systems
+          this.createParticleSystems();
+
+          // Create main lightning effects
+          this.createLightningSystem();
+
+          // Add ambient electrical sounds (visual representation)
+          this.createElectricalAura();
+
+          // Start the lightning animation cycle
+          this.startLightningCycle();
+        }
+
+        createStormBackground() {
+          const { width, height } = this.sys.game.config;
+
+          // Dark storm gradient
+          const gradient = this.add.graphics();
+          gradient.fillGradientStyle(0x1a1a3a, 0x1a1a3a, 0x0a0a2a, 0x0a0a2a, 1);
+          gradient.fillRect(0, 0, width, height);
+
+          // Animated storm patterns
+          this.tweens.add({
+            targets: gradient,
+            alpha: { from: 0.8, to: 1 },
+            duration: 2000,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Power2.easeInOut',
+          });
+        }
+
+        createStormClouds() {
+          const { width, height } = this.sys.game.config;
+
+          for (let i = 0; i < 5; i++) {
+            const cloud = this.add.image(
+              Phaser.Math.Between(-50, width + 50),
+              Phaser.Math.Between(20, height * 0.4),
+              'cloud'
+            );
+            cloud.setAlpha(0.6);
+            cloud.setScale(Phaser.Math.FloatBetween(0.8, 1.5));
+
+            this.stormClouds.push(cloud);
+
+            // Floating animation
+            this.tweens.add({
+              targets: cloud,
+              x: cloud.x + Phaser.Math.Between(-100, 100),
+              y: cloud.y + Phaser.Math.Between(-20, 20),
+              duration: Phaser.Math.Between(8000, 12000),
+              yoyo: true,
+              repeat: -1,
+              ease: 'Power1.easeInOut',
+            });
+
+            // Opacity flicker for storm effect
+            this.tweens.add({
+              targets: cloud,
+              alpha: { from: 0.3, to: 0.8 },
+              duration: Phaser.Math.Between(3000, 5000),
+              yoyo: true,
+              repeat: -1,
+              ease: 'Power2.easeInOut',
+            });
+          }
+        }
+
+        createParticleSystems() {
+          const { width, height } = this.sys.game.config;
+
+          // Electric sparks
+          this.sparkEmitter = this.add.particles(
+            width / 2,
+            height / 2,
+            'spark',
+            {
+              speed: { min: 50, max: 150 },
+              scale: { start: 0.5, end: 0 },
+              blendMode: 'ADD',
+              lifespan: 1000,
+              tint: [0x00ffff, 0x66ddff, 0x99eeff],
+              quantity: 2,
+              frequency: 100,
+            }
+          );
+
+          // Electrical aura particles
+          this.auraEmitter = this.add.particles(
+            width / 2,
+            height / 2,
+            'spark',
+            {
+              speed: { min: 20, max: 80 },
+              scale: { start: 0.3, end: 0 },
+              alpha: { start: 0.8, end: 0 },
+              blendMode: 'ADD',
+              lifespan: 2000,
+              tint: 0x4499ff,
+              quantity: 1,
+              frequency: 200,
+              emitZone: {
+                type: 'edge',
+                source: new Phaser.Geom.Circle(0, 0, 120),
+                quantity: 12,
+              },
+            }
+          );
+        }
+
+        createLightningSystem() {
+          const { width, height } = this.sys.game.config;
+
+          // Create multiple lightning bolt paths
+          for (let i = 0; i < 3; i++) {
+            const lightning = this.add.image(
+              width / 2 + Phaser.Math.Between(-80, 80),
+              height / 2,
+              'lightning'
+            );
+            lightning.setScale(Phaser.Math.FloatBetween(1.5, 2.5));
+            lightning.setAlpha(0);
+            lightning.setBlendMode(Phaser.BlendModes.ADD);
+            lightning.setTint(0x00ffff);
+
+            this.lightningBolts.push(lightning);
+          }
+        }
+
+        createElectricalAura() {
+          const { width, height } = this.sys.game.config;
+
+          // Central electrical field
+          const aura = this.add.graphics();
+          aura.lineStyle(2, 0x4499ff, 0.3);
+
+          for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const x1 = width / 2 + Math.cos(angle) * 80;
+            const y1 = height / 2 + Math.sin(angle) * 80;
+            const x2 = width / 2 + Math.cos(angle) * 120;
+            const y2 = height / 2 + Math.sin(angle) * 120;
+
+            aura.beginPath();
+            aura.moveTo(x1, y1);
+            aura.lineTo(x2, y2);
+            aura.strokePath();
+          }
+
+          // Rotating electrical field
+          this.tweens.add({
+            targets: aura,
+            rotation: Math.PI * 2,
+            duration: 8000,
+            repeat: -1,
+            ease: 'Linear',
+          });
+
+          // Pulsing alpha
+          this.tweens.add({
+            targets: aura,
+            alpha: { from: 0.2, to: 0.6 },
+            duration: 1500,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Power2.easeInOut',
+          });
+        }
+
+        startLightningCycle() {
+          // Main lightning strike sequence
+          this.lightningTimer = this.time.addEvent({
+            delay: Phaser.Math.Between(1500, 3000),
+            callback: this.createLightningStrike,
+            callbackScope: this,
+            loop: true,
+          });
+
+          // Secondary smaller strikes
+          this.time.addEvent({
+            delay: Phaser.Math.Between(500, 1000),
+            callback: this.createMinorStrike,
+            callbackScope: this,
+            loop: true,
+          });
+        }
+
+        createLightningStrike() {
+          const bolt = Phaser.Math.RND.pick(this.lightningBolts);
+          const { width, height } = this.sys.game.config;
+
+          // Reset position
+          bolt.x = width / 2 + Phaser.Math.Between(-100, 100);
+          bolt.y = height / 2 + Phaser.Math.Between(-50, 50);
+          bolt.setScale(Phaser.Math.FloatBetween(2, 3));
+          bolt.setRotation(Phaser.Math.FloatBetween(-0.5, 0.5));
+
+          // Lightning flash sequence
+          this.tweens.add({
+            targets: bolt,
+            alpha: { from: 0, to: 1 },
+            duration: 50,
+            yoyo: true,
+            repeat: 2,
+            onComplete: () => {
+              // Screen flash effect
+              this.cameras.main.flash(100, 100, 200, 255);
+
+              // Particle burst
+              this.sparkEmitter.setPosition(bolt.x, bolt.y);
+              this.sparkEmitter.explode(20);
+            },
+          });
+
+          // Sound wave effect (visual)
+          this.createSoundWave(bolt.x, bolt.y);
+        }
+
+        createMinorStrike() {
+          const { width, height } = this.sys.game.config;
+
+          // Small electrical arc
+          const arc = this.add.graphics();
+          arc.lineStyle(3, 0x66ddff, 1);
+
+          const startX = width / 2 + Phaser.Math.Between(-60, 60);
+          const startY = height / 2 + Phaser.Math.Between(-60, 60);
+          const endX = startX + Phaser.Math.Between(-40, 40);
+          const endY = startY + Phaser.Math.Between(-40, 40);
+
+          arc.beginPath();
+          arc.moveTo(startX, startY);
+          arc.lineTo(endX, endY);
+          arc.strokePath();
+          arc.setBlendMode(Phaser.BlendModes.ADD);
+
+          // Quick flash
+          this.tweens.add({
+            targets: arc,
+            alpha: { from: 1, to: 0 },
+            duration: 200,
+            onComplete: () => arc.destroy(),
+          });
+
+          // Small spark burst
+          this.sparkEmitter.setPosition(endX, endY);
+          this.sparkEmitter.explode(5);
+        }
+
+        createSoundWave(x, y) {
+          const wave = this.add.graphics();
+          wave.lineStyle(3, 0x4499ff, 0.8);
+          wave.strokeCircle(x, y, 10);
+          wave.setBlendMode(Phaser.BlendModes.ADD);
+
+          // Expanding wave
+          this.tweens.add({
+            targets: wave,
+            scaleX: 5,
+            scaleY: 5,
+            alpha: 0,
+            duration: 800,
+            ease: 'Power2.easeOut',
+            onComplete: () => wave.destroy(),
+          });
+        }
+
+        update() {
+          // Continuous electrical effects
+          this.lightningBolts.forEach((bolt) => {
+            if (bolt.alpha > 0) {
+              bolt.setTint(
+                Phaser.Math.RND.pick([0x00ffff, 0x66ddff, 0x99eeff, 0xccffff])
+              );
+            }
+          });
+
+          // Dynamic particle positions
+          if (Math.random() < 0.1) {
+            const { width, height } = this.sys.game.config;
+            this.auraEmitter.setPosition(
+              width / 2 + Phaser.Math.Between(-50, 50),
+              height / 2 + Phaser.Math.Between(-50, 50)
+            );
+          }
+        }
+      }
+
+      // Phaser game configuration
+      const config = {
+        type: Phaser.AUTO,
+        width: 350,
+        height: 500,
+        parent: 'phaser-game',
+        backgroundColor: '#0a0a2e',
+        scene: LightningCard,
+        render: {
+          antialias: true,
+        },
+      };
+
+      // Initialize the game
+      const game = new Phaser.Game(config);
+    </script>
+  </body>
+</html>
