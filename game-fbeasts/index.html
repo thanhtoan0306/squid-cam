@@ -407,37 +407,30 @@
         }
         fireBreath() {
           if (this.gameOver) return;
-          const e = this.findNearestEnemy();
-          if (e) {
-            for (let i = 0; i < 5; i++) {
-              const p = this.fireParticles.get(
-                this.player.x + 10,
-                this.player.y + Phaser.Math.Between(-8, 8)
+          // Fixed 45-degree upward angle (up-right)
+          const angle = Phaser.Math.DegToRad(-15);
+          for (let i = 0; i < 5; i++) {
+            const p = this.fireParticles.get(
+              this.player.x + 10,
+              this.player.y + Phaser.Math.Between(-8, 8)
+            );
+            if (p) {
+              p.setActive(true).setVisible(true);
+              p.body.setAllowGravity(true);
+
+              // Spread pattern around -45 degrees
+              const spread = (i - 2) * 0.12; // small spread
+              const launchAngle = angle + spread;
+
+              const velocity = Phaser.Math.Between(450, 650);
+              this.physics.velocityFromRotation(
+                launchAngle,
+                velocity,
+                p.body.velocity
               );
-              if (p) {
-                p.setActive(true).setVisible(true);
-                p.body.setAllowGravity(true);
-
-                // Spread pattern with parabolic arcs
-                const spreadAngle = (i - 2) * 0.3; // -0.6 to +0.6 radians
-                const baseAngle = Phaser.Math.Angle.Between(
-                  this.player.x,
-                  this.player.y,
-                  e.x,
-                  e.y
-                );
-                const launchAngle = baseAngle + spreadAngle - 0.25; // Arc upward
-
-                const velocity = Phaser.Math.Between(450, 650);
-                this.physics.velocityFromRotation(
-                  launchAngle,
-                  velocity,
-                  p.body.velocity
-                );
-                this.time.delayedCall(1500, () => {
-                  if (p.active) p.destroy();
-                });
-              }
+              this.time.delayedCall(1500, () => {
+                if (p.active) p.destroy();
+              });
             }
           }
         }
