@@ -96,7 +96,7 @@
           this.cameras.main.setBackgroundColor('#006400');
 
           this.player = this.physics.add
-            .sprite(100, this.lanePositions[this.playerLaneIndex], 'player')
+            .sprite(200, this.lanePositions[this.playerLaneIndex], 'player')
             .setImmovable(true);
           this.player.body.setCircle(10);
           this.player.body.setAllowGravity(false);
@@ -328,7 +328,7 @@
             const b = this.homingBolts.get(this.player.x, this.player.y);
             if (b) {
               b.setActive(true).setVisible(true);
-              this.physics.moveToObject(b, e, 400);
+              this.physics.moveToObject(b, e, 600);
             }
           }
         }
@@ -336,7 +336,7 @@
           if (this.gameOver) return;
           const e = this.findNearestEnemy();
           if (e) {
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 5; i++) {
               const p = this.fireParticles.get(this.player.x, this.player.y);
               if (p) {
                 p.setActive(true).setVisible(true);
@@ -346,24 +346,24 @@
                     this.player.y,
                     e.x,
                     e.y
-                  ) + Phaser.Math.FloatBetween(-0.3, 0.3);
-                this.physics.velocityFromRotation(a, 350, p.body.velocity);
-                this.time.delayedCall(500, () => p.destroy());
+                  ) + Phaser.Math.FloatBetween(-0.4, 0.4);
+                this.physics.velocityFromRotation(a, 500, p.body.velocity);
+                this.time.delayedCall(800, () => p.destroy());
               }
             }
           }
         }
         fireLotusNova() {
           if (this.gameOver) return;
-          const n = 36;
+          const n = 48;
           for (let i = 0; i < n; i++) {
             const f = this.lotusFlowers.get(this.player.x, this.player.y);
             if (f) {
               f.setActive(true).setVisible(true);
               const a = (i / n) * 2 * Math.PI;
               f.setRotation(a + Math.PI / 2);
-              this.physics.velocityFromRotation(a, 250, f.body.velocity);
-              this.time.delayedCall(1500, () => f.destroy());
+              this.physics.velocityFromRotation(a, 400, f.body.velocity);
+              this.time.delayedCall(2000, () => f.destroy());
             }
           }
         }
