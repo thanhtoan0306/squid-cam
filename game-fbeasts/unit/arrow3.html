@@ -36,17 +36,46 @@
           this.physics.world.enable(this.player);
           this.player.body.setCollideWorldBounds(true);
 
+          // Define the Y positions for the three lanes
+          this.laneYPositions = [
+            this.sys.game.config.height * 0.35, // Top lane
+            this.sys.game.config.height * 0.5, // Middle lane
+            this.sys.game.config.height * 0.65, // Bottom lane
+          ];
+
+          // Draw the lanes
+          const graphics = this.add.graphics({
+            lineStyle: { width: 2, color: 0xffa500 },
+          });
+          this.laneYPositions.forEach((y) => {
+            graphics.strokeLineShape(
+              new Phaser.Geom.Line(0, y, this.sys.game.config.width, y)
+            );
+          });
+
           // Create enemies group
           this.enemiesGroup = this.add.group();
 
           // Create bullets group
           this.bulletsGroup = this.add.group();
 
-          // Spawn an enemy on mouse click
+          // Spawn an enemy on mouse click in the nearest lane
           this.input.on(
             'pointerdown',
             (pointer) => {
-              this.spawnEnemy(pointer.x, pointer.y);
+              // Find the closest lane to the click
+              let closestLaneY = this.laneYPositions[0];
+              let minDistance = Math.abs(pointer.y - closestLaneY);
+
+              for (let i = 1; i < this.laneYPositions.length; i++) {
+                const distance = Math.abs(pointer.y - this.laneYPositions[i]);
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  closestLaneY = this.laneYPositions[i];
+                }
+              }
+
+              this.spawnEnemy(pointer.x, closestLaneY);
             },
             this
           );
