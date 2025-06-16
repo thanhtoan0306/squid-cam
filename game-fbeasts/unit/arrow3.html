@@ -25,7 +25,7 @@
         }
 
         create() {
-          // Create player at left edge, centered vertically
+          // Create single player
           this.player = this.add.rectangle(
             50,
             this.sys.game.config.height / 2,
@@ -33,6 +33,8 @@
             60,
             0x00ff00
           );
+          this.physics.world.enable(this.player);
+          this.player.body.setCollideWorldBounds(true);
 
           // Create enemies group
           this.enemiesGroup = this.add.group();
@@ -48,10 +50,6 @@
             },
             this
           );
-
-          // Physics for collisions
-          this.physics.world.enable([this.player]);
-          this.player.body.setCollideWorldBounds(true);
         }
 
         update() {
@@ -69,7 +67,7 @@
 
           // Continuously shoot if enemies exist and cooldown is over
           if (numEnemies > 0 && time > this.lastShotTime + dynamicCooldown) {
-            this.shootBullet();
+            this.playerShoot();
             this.lastShotTime = time;
           }
 
@@ -90,14 +88,18 @@
           this.checkCollisions();
         }
 
-        findNearestEnemy() {
+        findNearestEnemy(player) {
           let nearestEnemy = null;
           let minDistance = Infinity;
 
           this.enemiesGroup.children.entries.forEach((enemy) => {
-            // We only care about horizontal distance since they are in the same lane
-            const distance = enemy.x - this.player.x;
-            if (distance > 0 && distance < minDistance) {
+            const distance = Phaser.Math.Distance.Between(
+              player.x,
+              player.y,
+              enemy.x,
+              enemy.y
+            );
+            if (distance < minDistance) {
               minDistance = distance;
               nearestEnemy = enemy;
             }
@@ -106,14 +108,49 @@
           return nearestEnemy;
         }
 
-        shootBullet() {
-          const target = this.findNearestEnemy();
+        findFarthestEnemy(player) {
+          let farthestEnemy = null;
+          let maxDistance = 0;
+
+          this.enemiesGroup.children.entries.forEach((enemy) => {
+            const distance = Phaser.Math.Distance.Between(
+              player.x,
+              player.y,
+              enemy.x,
+              enemy.y
+            );
+            if (distance > maxDistance) {
+              maxDistance = distance;
+              farthestEnemy = enemy;
+            }
+          });
+
+          return farthestEnemy;
+        }
+
+        playerShoot() {
+          const nearestEnemy = this.findNearestEnemy(this.player);
+          const farthestEnemy = this.findFarthestEnemy(this.player);
+
+          // Fire two spreads at the nearest enemy (from middle and bottom players)
+          if (nearestEnemy) {
+            this.createBulletSpread(this.player, nearestEnemy);
+            this.createBulletSpread(this.player, nearestEnemy);
+          }
+
+          // Fire one spread at the farthest enemy (from top player)
+          if (farthestEnemy) {
+            this.createBulletSpread(this.player, farthestEnemy);
+          }
+        }
+
+        createBulletSpread(player, target) {
           if (!target) {
             return; // Don't shoot if there are no enemies
           }
 
-          const startX = this.player.x + 20;
-          const startY = this.player.y;
+          const startX = player.x + 20;
+          const startY = player.y;
 
           // --- Base trajectory calculation for the middle bullet ---
           const dx = target.x - startX;
@@ -174,8 +211,8 @@
 
         spawnEnemy(x, y) {
           // Prevent spawning on top of the player
-          if (x < this.player.x + 50) {
-            x = this.player.x + 50;
+          if (x < 100) {
+            x = 100;
           }
           const enemy = this.add.rectangle(x, y, 30, 30, 0xff0000); // Start as red
           this.physics.world.enable(enemy);
@@ -223,6 +260,7 @@
           this.enemiesGroup.children.entries.forEach((enemy) => {
             if (
               enemy.active &&
+              this.player.active &&
               Phaser.Geom.Rectangle.Overlaps(
                 this.player.getBounds(),
                 enemy.getBounds()
