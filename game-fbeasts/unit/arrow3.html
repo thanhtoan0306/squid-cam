@@ -232,8 +232,14 @@
           // Rotation is not needed for a circular bullet
           // bullet.rotation = Math.atan2(bullet.velocityY, bullet.velocityX);
 
-          // Remove bullet if it goes off screen
-          if (bullet.y > 600 || bullet.x > 800 || bullet.x < 0) {
+          const bottomLaneY = this.laneYPositions[2];
+
+          // Remove bullet if it goes off screen or below the bottom lane
+          if (
+            bullet.y > bottomLaneY ||
+            bullet.x > this.sys.game.config.width ||
+            bullet.x < 0
+          ) {
             bullet.destroy();
           }
         }
