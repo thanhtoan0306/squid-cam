@@ -16,6 +16,8 @@
           this.enemies = [];
           this.player = null;
           this.gravity = 500; // Gravity constant for calculations
+          this.lastShotTime = 0;
+          // this.shotCooldown = 800; // This will now be dynamic
         }
 
         preload() {
@@ -47,14 +49,30 @@
             this
           );
 
-          // Auto-fire timer has been removed.
-
           // Physics for collisions
           this.physics.world.enable([this.player]);
           this.player.body.setCollideWorldBounds(true);
         }
 
         update() {
+          const time = this.time.now;
+          const numEnemies = this.enemiesGroup.getLength();
+
+          // --- Dynamic Cooldown Calculation for a continuous stream ---
+          const baseCooldown = 250; // Base time between single shots
+          const reductionPerEnemy = 20; // Reduce cooldown for each additional enemy
+          const minCooldown = 50; // The absolute fastest firing rate
+
+          let dynamicCooldown =
+            baseCooldown - (numEnemies - 1) * reductionPerEnemy;
+          dynamicCooldown = Math.max(dynamicCooldown, minCooldown); // Ensure cooldown doesn't go below minimum
+
+          // Continuously shoot if enemies exist and cooldown is over
+          if (numEnemies > 0 && time > this.lastShotTime + dynamicCooldown) {
+            this.shootArrow();
+            this.lastShotTime = time;
+          }
+
           // Update arrows
           this.arrowsGroup.children.entries.forEach((arrow) => {
             this.updateArrow(arrow);
@@ -113,14 +131,14 @@
           const maxAngle = -Phaser.Math.DegToRad(30); // -30 degrees
           const clampedAngle = Phaser.Math.Clamp(baseAngle, minAngle, maxAngle);
 
-          // --- Fire 3 arrows with spacing ---
-          const numArrows = 3;
+          // --- Fire 5 arrows with spacing ---
+          const numArrows = 5;
           const angleSpacing = Phaser.Math.DegToRad(5); // 5 degrees in radians
 
           for (let i = 0; i < numArrows; i++) {
             // Calculate the angle for the current arrow in the spread
             const angleOffset = (i - Math.floor(numArrows / 2)) * angleSpacing;
-            const currentAngle = clampedAngle + angleOffset; // Use the clamped angle
+            const currentAngle = clampedAngle + angleOffset;
 
             // Calculate new velocity components based on the adjusted angle
             const vx = Math.cos(currentAngle) * power;
@@ -159,13 +177,13 @@
           if (x < this.player.x + 50) {
             x = this.player.x + 50;
           }
-          const enemy = this.add.rectangle(x, y, 30, 30, 0xff0000);
+          const enemy = this.add.rectangle(x, y, 30, 30, 0xff0000); // Start as red
           this.physics.world.enable(enemy);
-          this.enemiesGroup.add(enemy);
 
-          // Fire a volley of arrows in reaction to the new enemy.
-          // A short delay ensures the new enemy is registered before targeting.
-          this.time.delayedCall(50, this.shootArrow, [], this);
+          // Give the enemy 3 HP
+          enemy.hp = 3;
+
+          this.enemiesGroup.add(enemy);
         }
 
         checkCollisions() {
@@ -179,10 +197,24 @@
                   enemy.getBounds()
                 )
               ) {
-                // Hit enemy
+                // Destroy the arrow on impact
                 arrow.destroy();
-                enemy.destroy();
-                console.log('Enemy hit!');
+
+                // Reduce enemy HP
+                enemy.hp -= 1;
+
+                // Check if enemy is defeated
+                if (enemy.hp <= 0) {
+                  enemy.destroy();
+                  console.log('Enemy defeated!');
+                } else {
+                  // Update color based on remaining HP
+                  if (enemy.hp === 2) {
+                    enemy.setFillStyle(0xffa500); // Orange
+                  } else if (enemy.hp === 1) {
+                    enemy.setFillStyle(0xffff00); // Yellow
+                  }
+                }
               }
             });
           });
