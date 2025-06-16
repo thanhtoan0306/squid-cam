@@ -174,17 +174,43 @@
         }
 
         createBulletSpread(player, target) {
-          if (!target) {
-            return; // Don't shoot if there are no enemies
+          if (!target || !target.active) {
+            return; // Don't shoot if there are no valid enemies
           }
 
           const startX = player.x + 20;
           const startY = player.y;
+          const enemy_vx = -50; // Enemy speed in pixels per second
+          const bulletSpeed = 450; // Desired speed of our bullets
 
-          // --- Base trajectory calculation for the middle bullet ---
-          const dx = target.x - startX;
-          const dy = target.y - startY;
-          const timeToTarget = 1.1;
+          // --- Predictive Aiming Calculation ---
+          // 1. Estimate flight time based on current distance and a desired bullet speed.
+          const distance = Phaser.Math.Distance.Between(
+            startX,
+            startY,
+            target.x,
+            target.y
+          );
+          let timeToTarget = distance / bulletSpeed;
+
+          // --- High Arc Adjustment for Close Bottom-Lane Enemies ---
+          const horizontalDistance = target.x - startX;
+          const bottomLaneY = this.laneYPositions[2]; // Get Y of the bottom lane
+
+          // If the enemy is on the bottom lane and close, increase flight time for a higher arc
+          if (target.y === bottomLaneY && horizontalDistance < 250) {
+            timeToTarget *= 1.5; // This makes the trajectory higher and more curved.
+          }
+
+          // 2. Predict the enemy's future position using that flight time.
+          const predictedX = target.x + enemy_vx * timeToTarget;
+          const predictedY = target.y; // Enemy only moves horizontally.
+
+          // 3. Calculate the required initial velocity to hit the *predicted* position.
+          const dx = predictedX - startX;
+          const dy = predictedY - startY;
+
+          // This is the core physics calculation for a projectile with gravity.
           const base_vx = dx / timeToTarget;
           const base_vy = dy / timeToTarget - 0.5 * this.gravity * timeToTarget;
 
@@ -192,13 +218,13 @@
           const baseAngle = Math.atan2(base_vy, base_vx);
           const power = Math.sqrt(base_vx * base_vx + base_vy * base_vy);
 
-          // --- Clamp the angle between 30 and 60 degrees upward ---
-          const minAngle = -Phaser.Math.DegToRad(60); // -60 degrees
+          // --- Clamp the angle to allow for steeper shots at close targets ---
+          const minAngle = -Phaser.Math.DegToRad(85); // Allow steeper angle for close/low targets
           const maxAngle = -Phaser.Math.DegToRad(30); // -30 degrees
           const clampedAngle = Phaser.Math.Clamp(baseAngle, minAngle, maxAngle);
 
-          // --- Fire 5 bullets with spacing ---
-          const numBullets = 5;
+          // --- Fire 10 bullets in a burst ---
+          const numBullets = 4;
           const angleSpacing = Phaser.Math.DegToRad(5); // 5 degrees in radians
 
           for (let i = 0; i < numBullets; i++) {
@@ -252,8 +278,8 @@
           const enemy = this.add.rectangle(x, y, 30, 30, 0xff0000); // Start as red
           this.physics.world.enable(enemy);
 
-          // Give the enemy 3 HP
-          enemy.hp = 3;
+          // Give the enemy 20 HP
+          enemy.hp = 10;
 
           this.enemiesGroup.add(enemy);
         }
