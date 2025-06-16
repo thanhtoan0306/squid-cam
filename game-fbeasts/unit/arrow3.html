@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Arrow Game</title>
+    <title>Bullet Game</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
   </head>
   <body>
     <div id="game-container"></div>
     <script>
-      class ArrowGame extends Phaser.Scene {
+      class BulletGame extends Phaser.Scene {
         constructor() {
-          super({ key: 'ArrowGame' });
-          this.arrows = [];
+          super({ key: 'BulletGame' });
+          this.bullets = [];
           this.enemies = [];
           this.player = null;
           this.gravity = 500; // Gravity constant for calculations
@@ -37,8 +37,8 @@
           // Create enemies group
           this.enemiesGroup = this.add.group();
 
-          // Create arrows group
-          this.arrowsGroup = this.add.group();
+          // Create bullets group
+          this.bulletsGroup = this.add.group();
 
           // Spawn an enemy on mouse click
           this.input.on(
@@ -69,13 +69,13 @@
 
           // Continuously shoot if enemies exist and cooldown is over
           if (numEnemies > 0 && time > this.lastShotTime + dynamicCooldown) {
-            this.shootArrow();
+            this.shootBullet();
             this.lastShotTime = time;
           }
 
-          // Update arrows
-          this.arrowsGroup.children.entries.forEach((arrow) => {
-            this.updateArrow(arrow);
+          // Update bullets
+          this.bulletsGroup.children.entries.forEach((bullet) => {
+            this.updateBullet(bullet);
           });
 
           // Update enemies
@@ -106,7 +106,7 @@
           return nearestEnemy;
         }
 
-        shootArrow() {
+        shootBullet() {
           const target = this.findNearestEnemy();
           if (!target) {
             return; // Don't shoot if there are no enemies
@@ -115,7 +115,7 @@
           const startX = this.player.x + 20;
           const startY = this.player.y;
 
-          // --- Base trajectory calculation for the middle arrow ---
+          // --- Base trajectory calculation for the middle bullet ---
           const dx = target.x - startX;
           const dy = target.y - startY;
           const timeToTarget = 1.1;
@@ -131,44 +131,44 @@
           const maxAngle = -Phaser.Math.DegToRad(30); // -30 degrees
           const clampedAngle = Phaser.Math.Clamp(baseAngle, minAngle, maxAngle);
 
-          // --- Fire 5 arrows with spacing ---
-          const numArrows = 5;
+          // --- Fire 5 bullets with spacing ---
+          const numBullets = 5;
           const angleSpacing = Phaser.Math.DegToRad(5); // 5 degrees in radians
 
-          for (let i = 0; i < numArrows; i++) {
-            // Calculate the angle for the current arrow in the spread
-            const angleOffset = (i - Math.floor(numArrows / 2)) * angleSpacing;
+          for (let i = 0; i < numBullets; i++) {
+            // Calculate the angle for the current bullet in the spread
+            const angleOffset = (i - Math.floor(numBullets / 2)) * angleSpacing;
             const currentAngle = clampedAngle + angleOffset;
 
             // Calculate new velocity components based on the adjusted angle
             const vx = Math.cos(currentAngle) * power;
             const vy = Math.sin(currentAngle) * power;
 
-            // Create arrow
-            const arrow = this.add.rectangle(startX, startY, 4, 20, 0xffff00);
-            this.physics.world.enable(arrow);
+            // Create bullet
+            const bullet = this.add.circle(startX, startY, 5, 0xffff00);
+            this.physics.world.enable(bullet);
 
-            // Set arrow properties based on calculated trajectory
-            arrow.velocityX = vx;
-            arrow.velocityY = vy;
-            arrow.gravity = this.gravity;
+            // Set bullet properties based on calculated trajectory
+            bullet.velocityX = vx;
+            bullet.velocityY = vy;
+            bullet.gravity = this.gravity;
 
-            this.arrowsGroup.add(arrow);
+            this.bulletsGroup.add(bullet);
           }
         }
 
-        updateArrow(arrow) {
+        updateBullet(bullet) {
           // Apply gravity and movement
-          arrow.velocityY += arrow.gravity * 0.016; // Gravity effect
-          arrow.y += arrow.velocityY * 0.016;
-          arrow.x += arrow.velocityX * 0.016; // Horizontal movement
+          bullet.velocityY += bullet.gravity * 0.016; // Gravity effect
+          bullet.y += bullet.velocityY * 0.016;
+          bullet.x += bullet.velocityX * 0.016; // Horizontal movement
 
-          // Update arrow rotation to match trajectory
-          arrow.rotation = Math.atan2(arrow.velocityY, arrow.velocityX);
+          // Rotation is not needed for a circular bullet
+          // bullet.rotation = Math.atan2(bullet.velocityY, bullet.velocityX);
 
-          // Remove arrow if it goes off screen
-          if (arrow.y > 600 || arrow.x > 800 || arrow.x < 0) {
-            arrow.destroy();
+          // Remove bullet if it goes off screen
+          if (bullet.y > 600 || bullet.x > 800 || bullet.x < 0) {
+            bullet.destroy();
           }
         }
 
@@ -187,18 +187,18 @@
         }
 
         checkCollisions() {
-          this.arrowsGroup.children.entries.forEach((arrow) => {
+          this.bulletsGroup.children.entries.forEach((bullet) => {
             this.enemiesGroup.children.entries.forEach((enemy) => {
               if (
                 enemy.active &&
-                arrow.active &&
+                bullet.active &&
                 Phaser.Geom.Rectangle.Overlaps(
-                  arrow.getBounds(),
+                  bullet.getBounds(),
                   enemy.getBounds()
                 )
               ) {
-                // Destroy the arrow on impact
-                arrow.destroy();
+                // Destroy the bullet on impact
+                bullet.destroy();
 
                 // Reduce enemy HP
                 enemy.hp -= 1;
@@ -248,7 +248,7 @@
             debug: false,
           },
         },
-        scene: ArrowGame,
+        scene: BulletGame,
       };
 
       // Start the game
