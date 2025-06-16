@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Phaser Parabolic Arrow Accurate Hit</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
+    <style>
+      body {
+        margin: 0;
+      }
+      canvas {
+        display: block;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      // Utility: Solve for angle to hit target with fixed speed and gravity
+      function solveLaunchAngle(
+        x0,
+        y0,
+        x1,
+        y1,
+        speed,
+        gravity,
+        angleOffsetRad = 0
+      ) {
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        const g = gravity;
+        const v = speed;
+
+        const v2 = v * v;
+        const root = v2 * v2 - g * (g * dx * dx + 2 * dy * v2);
+
+        if (root < 0) {
+          // Target is out of range, fallback to direct angle with upward offset
+          return Phaser.Math.Angle.Between(x0, y0, x1, y1) - angleOffsetRad;
+        }
+
+        // Two possible angles: high arc and low arc. We'll use the higher arc for more upward motion.
+        const thetaHigh = Math.atan((v2 + Math.sqrt(root)) / (g * dx));
+        return thetaHigh + angleOffsetRad;
+      }
+
+      // Helper: Estimate time of flight for the arrow
+      function estimateTimeOfFlight(x0, y0, x1, y1, speed, gravity) {
+        const dx = x1 - x0;
+        const dy = y1 - y0;
+        const v = speed;
+        const g = gravity;
+
+        const v2 = v * v;
+        const root = v2 * v2 - g * (g * dx * dx + 2 * dy * v2);
+
+        if (root < 0) return dx / v; // fallback: straight line time
+
+        // Use the lower angle (shorter flight time)
+        const angle = Math.atan((v2 - Math.sqrt(root)) / (g * dx));
+        const t = dx / (v * Math.cos(angle));
+        return t;
+      }
+
+      class Arrow {
+        constructor(scene, fromX, fromY, toX, toY, angleOffsetRad = 0) {
+          this.scene = scene;
+          this.graphics = scene.add.graphics();
+          this.length = 40;
+
+          // Parameters
+          const speed = 400;
+          const gravity = 500;
+
+          // Calculate angle to land at (toX, toY) with upward offset
+          this.angle = solveLaunchAngle(
+            fromX,
+            fromY,
+            toX,
+            toY,
+            speed,
+            gravity,
+            angleOffsetRad
+          );
+
+          // Initial position
+          this.x = fromX;
+          this.y = fromY;
+
+          // Velocity
+          this.vx = Math.cos(this.angle) * speed;
+          this.vy = Math.sin(this.angle) * speed;
+
+          // Gravity
+          this.gravity = gravity;
+          this.alive = true;
+        }
+
+        update(dt) {
+          if (!this.alive) return;
+
+          // Update position
+          this.x += this.vx * dt;
+          this.y += this.vy * dt;
+          this.vy += this.gravity * dt;
+
+          // Update angle based on velocity for rotation
+          this.angle = Math.atan2(this.vy, this.vx);
+
+          // Remove if out of bounds
+          if (this.x < 0 || this.x > 800 || this.y > 600) {
+            this.alive = false;
+            this.graphics.clear();
+          }
+        }
+
+        draw() {
+          if (!this.alive) return;
+          this.graphics.clear();
+          this.graphics.lineStyle(4, 0x8b4513, 1);
+          const x2 = this.x + Math.cos(this.angle) * this.length;
+          const y2 = this.y + Math.sin(this.angle) * this.length;
+          this.graphics.strokeLineShape(
+            new Phaser.Geom.Line(this.x, this.y, x2, y2)
+          );
+        }
+      }
+
+      class MainScene extends Phaser.Scene {
+        constructor() {
+          super('MainScene');
+        }
+
+        create() {
+          // Player at middle left edge
+          this.player = { x: 40, y: 300 };
+          // Enemy at center of screen
+          this.enemy = { x: 700, y: 300 };
+
+          // Draw player and enemy
+          this.playerDot = this.add.circle(
+            this.player.x,
+            this.player.y,
+            12,
+            0x00ff00
+          );
+          this.enemyDot = this.add.circle(
+            this.enemy.x,
+            this.enemy.y,
+            12,
+            0xff0000
+          );
+
+          this.arrows = [];
+
+          // Shoot arrows every 1 second
+          this.time.addEvent({
+            delay: 1000,
+            loop: true,
+            callback: () => this.shootArrows(),
+          });
+
+          // Instruction text
+          this.add.text(
+            16,
+            16,
+            'Player auto-shoots 5 arrows every 1s.\nEnemy is stationary in the center.',
+            { font: '18px Arial', fill: '#fff' }
+          );
+        }
+
+        shootArrows() {
+          const speed = 400;
+          const gravity = 500;
+          const spread = [-130, -125, -120, -115, -110].map((a) =>
+            Phaser.Math.DegToRad(a)
+          );
+
+          // Estimate time of flight to enemy's current position
+          const t = estimateTimeOfFlight(
+            this.player.x,
+            this.player.y,
+            this.enemy.x,
+            this.enemy.y,
+            speed,
+            gravity
+          );
+
+          // Predict enemy's future position
+          const dx = this.player.x - this.enemy.x;
+          const dy = this.player.y - this.enemy.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const enemySpeed = 100;
+          const moveX = (dx / dist) * enemySpeed * t;
+          const moveY = (dy / dist) * enemySpeed * t;
+          const predictedX = this.enemy.x + moveX;
+          const predictedY = this.enemy.y + moveY;
+
+          // Shoot arrows at predicted position
+          for (let i = 0; i < 5; i++) {
+            const arrow = new Arrow(
+              this,
+              this.player.x,
+              this.player.y,
+              predictedX,
+              predictedY,
+              spread[i]
+            );
+            this.arrows.push(arrow);
+          }
+        }
+
+        update(time, delta) {
+          const dt = delta / 1000;
+
+          // Enemy stays in place, so no movement code here
+
+          // Update and draw arrows
+          for (const arrow of this.arrows) {
+            if (arrow.alive) {
+              arrow.update(dt);
+              arrow.draw();
+            }
+          }
+        }
+      }
+
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        backgroundColor: '#222',
+        scene: MainScene,
+      };
+
+      new Phaser.Game(config);
+    </script>
+  </body>
+</html>

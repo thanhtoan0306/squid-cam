@@ -44,7 +44,7 @@
           this.gameOver = false;
           this.score = 0;
 
-          this.lanePositions = [180, 300, 420]; // 3 lanes, evenly spaced
+          this.lanePositions = [200, 300, 400]; // 3 lanes, evenly spaced
           this.playerLaneIndex = 1; // middle lane by default
 
           // --- Create Graphics for Sprites ---
@@ -115,6 +115,28 @@
             callbackScope: this,
             loop: true,
           });
+
+          // --- Phaser Button for Spawn Toggle ---
+          this.spawnBtn = this.add
+            .text(650, 30, 'Spawn: ON', {
+              fontSize: '28px',
+              fill: '#fff',
+              backgroundColor: '#333',
+              padding: { x: 12, y: 6 },
+              borderRadius: 8,
+            })
+            .setInteractive({ useHandCursor: true })
+            .setDepth(10)
+            .on('pointerdown', () => {
+              this.spawnEnabled = !this.spawnEnabled;
+              this.spawnTimer.paused = !this.spawnEnabled;
+              this.spawnBtn.setText(
+                this.spawnEnabled ? 'Spawn: ON' : 'Spawn: OFF'
+              );
+              this.spawnBtn.setBackgroundColor(
+                this.spawnEnabled ? '#333' : '#900'
+              );
+            });
           this.time.addEvent({
             delay: 100,
             callback: this.fireBreath,
