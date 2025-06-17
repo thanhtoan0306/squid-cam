@@ -373,35 +373,40 @@
         checkCollisions() {
           this.bulletsGroup.children.entries.forEach((bullet) => {
             this.enemiesGroup.children.entries.forEach((enemy) => {
-              if (
-                enemy.active &&
-                bullet.active &&
-                Phaser.Geom.Rectangle.Overlaps(
-                  bullet.getBounds(),
-                  enemy.getBounds()
-                )
-              ) {
-                // Destroy the bullet on impact
-                bullet.destroy();
+              if (enemy.active && bullet.active) {
+                // Define center area (e.g., 40% of enemy width/height)
+                const centerWidth = enemy.displayWidth * 0.4;
+                const centerHeight = enemy.displayHeight * 0.4;
+                const centerX = enemy.x - centerWidth / 2;
+                const centerY = enemy.y - centerHeight / 2;
+                const centerRect = new Phaser.Geom.Rectangle(
+                  centerX,
+                  centerY,
+                  centerWidth,
+                  centerHeight
+                );
 
-                // Reduce enemy HP
-                enemy.hp -= 1;
+                // Check if bullet overlaps the center area
+                if (
+                  Phaser.Geom.Rectangle.Overlaps(bullet.getBounds(), centerRect)
+                ) {
+                  // Bullet hit the center of the enemy!
+                  bullet.destroy();
+                  enemy.hp -= 1;
 
-                // Check if enemy is defeated
-                if (enemy.hp <= 0) {
-                  // Destroy the collider box if it exists
-                  if (enemy.colliderBox) {
-                    enemy.colliderBox.destroy();
-                    enemy.colliderBox = null;
-                  }
-                  enemy.destroy();
-                  console.log('Enemy defeated!');
-                } else {
-                  // Update color based on remaining HP
-                  if (enemy.hp === 2) {
-                    enemy.setTint(0xffa500); // Orange
-                  } else if (enemy.hp === 1) {
-                    enemy.setTint(0xffff00); // Yellow
+                  if (enemy.hp <= 0) {
+                    if (enemy.colliderBox) {
+                      enemy.colliderBox.destroy();
+                      enemy.colliderBox = null;
+                    }
+                    enemy.destroy();
+                    console.log('Enemy defeated!');
+                  } else {
+                    if (enemy.hp === 2) {
+                      enemy.setTint(0xffa500);
+                    } else if (enemy.hp === 1) {
+                      enemy.setTint(0xffff00);
+                    }
                   }
                 }
               }
