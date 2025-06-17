@@ -152,6 +152,14 @@
             }
           });
 
+          // Update collider box positions for all enemies
+          this.enemiesGroup.getChildren().forEach((enemy) => {
+            if (enemy.hasColliderBox && enemy.colliderBox) {
+              enemy.colliderBox.x = enemy.x;
+              enemy.colliderBox.y = enemy.y;
+            }
+          });
+
           // Check collisions
           this.checkCollisions();
         }
@@ -326,14 +334,14 @@
           const enemy = this.add.sprite(x, y, 'zombie_walk_000');
           this.physics.world.enable(enemy);
 
-          // Resize: set height to 150px, maintain aspect ratio
-          const scale = 100 / enemy.height;
+          // Resize: set height to 30px, maintain aspect ratio
+          const scale = 30 / enemy.height;
           enemy.setScale(scale);
 
           // Mirror horizontally so head faces left
           enemy.setFlipX(true);
 
-          // Adjust y so bottom edge sits on the lane line
+          // Align bottom edge to lane line
           enemy.y = y - enemy.displayHeight / 2;
 
           // Play walk animation
@@ -343,6 +351,23 @@
           enemy.hp = 10;
 
           this.enemiesGroup.add(enemy);
+
+          // --- Draw red box collider for enemy ---
+          const box = this.add.graphics();
+          box.lineStyle(2, 0xff0000, 1);
+          box.strokeRect(
+            -enemy.displayWidth / 2,
+            -enemy.displayHeight / 2,
+            enemy.displayWidth,
+            enemy.displayHeight
+          );
+          box.setDepth(10);
+
+          // Make the box follow the enemy
+          box.x = enemy.x;
+          box.y = enemy.y;
+          enemy.colliderBox = box;
+          enemy.hasColliderBox = true;
         }
 
         checkCollisions() {
@@ -364,6 +389,11 @@
 
                 // Check if enemy is defeated
                 if (enemy.hp <= 0) {
+                  // Destroy the collider box if it exists
+                  if (enemy.colliderBox) {
+                    enemy.colliderBox.destroy();
+                    enemy.colliderBox = null;
+                  }
                   enemy.destroy();
                   console.log('Enemy defeated!');
                 } else {
@@ -388,10 +418,34 @@
                 enemy.getBounds()
               )
             ) {
+              // Destroy the collider box if it exists
+              if (enemy.colliderBox) {
+                enemy.colliderBox.destroy();
+                enemy.colliderBox = null;
+              }
               enemy.destroy();
               console.log('Player hit! Game Over!');
               // Add game over logic here
             }
+          });
+
+          // Collect enemies to remove after iteration
+          const enemiesToRemove = [];
+
+          this.enemiesGroup.getChildren().forEach((enemy) => {
+            if (enemy.hp <= 0) {
+              // Destroy the collider box if it exists
+              if (enemy.colliderBox) {
+                enemy.colliderBox.destroy();
+                enemy.colliderBox = null;
+              }
+              enemiesToRemove.push(enemy);
+            }
+          });
+
+          // Remove and destroy enemies after iteration
+          enemiesToRemove.forEach((enemy) => {
+            this.enemiesGroup.remove(enemy, true, true);
           });
         }
       }
