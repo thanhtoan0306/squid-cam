@@ -334,8 +334,8 @@
           const enemy = this.add.sprite(x, y, 'zombie_walk_000');
           this.physics.world.enable(enemy);
 
-          // Resize: set height to 30px, maintain aspect ratio
-          const scale = 30 / enemy.height;
+          // Resize: set height to 90px (3x bigger), maintain aspect ratio
+          const scale = 90 / enemy.height;
           enemy.setScale(scale);
 
           // Mirror horizontally so head faces left
