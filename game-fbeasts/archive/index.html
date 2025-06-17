@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Phaser - 4 Lane Defense Game (Fixed)</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #1a1a1a;
+      }
+      canvas {
+        border: 2px solid #555;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      const HP_BAR_WIDTH = 30;
+      const HP_BAR_HEIGHT = 5;
+      const MAX_ENEMY_HP = 3;
+
+      class GameScene extends Phaser.Scene {
+        constructor() {
+          super('GameScene');
+          this.player = null;
+          this.enemies = null;
+          this.score = 0;
+          this.scoreText = null;
+          this.gameOver = false;
+
+          this.lanePositions = [];
+          this.playerLaneIndex = 1;
+        }
+
+        preload() {
+          // No assets to load
+        }
+
+        create() {
+          this.gameOver = false;
+          this.score = 0;
+
+          this.lanePositions = [200, 300, 400]; // 3 lanes, evenly spaced
+          this.playerLaneIndex = 1; // middle lane by default
+
+          // --- Create Graphics for Sprites ---
+          const playerGraphics = this.make.graphics({
+            fillStyle: { color: 0xffffff },
+            lineStyle: { width: 2, color: 0x0000ff },
+          });
+          playerGraphics.fillCircle(10, 10, 10);
+          playerGraphics.generateTexture('player', 20, 20);
+          playerGraphics.destroy();
+
+          const enemyGraphics = this.make.graphics({
+            fillStyle: { color: 0xff0000 },
+          });
+          enemyGraphics.fillCircle(8, 8, 8);
+          enemyGraphics.generateTexture('enemy', 16, 16);
+          enemyGraphics.destroy();
+
+          const fireParticleGraphics = this.make.graphics({
+            fillStyle: { color: 0xffa500 },
+          });
+          fireParticleGraphics.fillCircle(3, 3, 3);
+          fireParticleGraphics.generateTexture('fire_particle', 6, 6);
+          fireParticleGraphics.destroy();
+
+          // --- Setup Game World ---
+          this.cameras.main.setBackgroundColor('#006400');
+
+          this.player = this.physics.add
+            .sprite(50, this.lanePositions[this.playerLaneIndex], 'player')
+            .setImmovable(true);
+          this.player.body.setCircle(10);
+          this.player.body.setAllowGravity(false);
+
+          // Keyboard input for skills
+          this.input.keyboard.on('keydown-ONE', () => this.fireBreath());
+
+          this.enemies = this.add.group();
+          1;
+          this.fireParticles = this.physics.add.group({
+            defaultKey: 'fire_particle',
+            maxSize: 300,
+          });
+
+          // Add gravity for more realistic projectile physics
+          this.physics.world.gravity.y = 600; // Default is 300, try doubling
+
+          // --- Setup Collisions ---
+          this.physics.add.overlap(
+            this.fireParticles,
+            this.enemies,
+            this.handleProjectileHit,
+            null,
+            this
+          );
+          this.physics.add.overlap(
+            this.player,
+            this.enemies,
+            this.handlePlayerHit,
+            null,
+            this
+          );
+
+          // --- Timers ---
+          this.time.addEvent({
+            delay: 80,
+            callback: this.spawnEnemy,
+            callbackScope: this,
+            loop: true,
+          });
+
+          // --- Phaser Button for Spawn Toggle ---
+          this.spawnBtn = this.add
+            .text(650, 30, 'Spawn: ON', {
+              fontSize: '28px',
+              fill: '#fff',
+              backgroundColor: '#333',
+              padding: { x: 12, y: 6 },
+              borderRadius: 8,
+            })
+            .setInteractive({ useHandCursor: true })
+            .setDepth(10)
+            .on('pointerdown', () => {
+              this.spawnEnabled = !this.spawnEnabled;
+              this.spawnTimer.paused = !this.spawnEnabled;
+              this.spawnBtn.setText(
+                this.spawnEnabled ? 'Spawn: ON' : 'Spawn: OFF'
+              );
+              this.spawnBtn.setBackgroundColor(
+                this.spawnEnabled ? '#333' : '#900'
+              );
+            });
+          this.time.addEvent({
+            delay: 100,
+            callback: this.fireBreath,
+            callbackScope: this,
+            loop: true,
+          });
+
+          // --- UI ---
+          this.scoreText = this.add.text(16, 16, 'Score: 0', {
+            fontSize: '32px',
+            fill: '#fff',
+            stroke: '#000',
+            strokeThickness: 4,
+          });
+
+          // --- Lane Indicators ---
+          const laneColor = 0xff9900; // orange
+          for (let i = 0; i < this.lanePositions.length; i++) {
+            const y = this.lanePositions[i];
+            const laneGraphics = this.add.graphics();
+            laneGraphics.lineStyle(4, laneColor, 0.5);
+            laneGraphics.beginPath();
+            laneGraphics.moveTo(80, y);
+            laneGraphics.lineTo(720, y);
+            laneGraphics.strokePath();
+          }
+        }
+
+        update() {
+          if (this.gameOver) {
+            return;
+          }
+
+          // Move enemies straight, keep y constant
+          this.enemies.getChildren().forEach((enemyContainer) => {
+            if (enemyContainer.active && enemyContainer.body) {
+              // Only move horizontally, do not change y
+              enemyContainer.body.setVelocityX(-120);
+              // enemyContainer.y remains unchanged
+            }
+          });
+        }
+
+        spawnEnemy() {
+          if (this.gameOver) return;
+
+          const laneIndex = Phaser.Math.Between(
+            0,
+            this.lanePositions.length - 1
+          );
+          const y = this.lanePositions[laneIndex];
+          const x = 820;
+
+          const hpBarBg = this.add
+            .rectangle(0, -15, HP_BAR_WIDTH, HP_BAR_HEIGHT, 0xff0000)
+            .setOrigin(0.5);
+          const hpBar = this.add
+            .rectangle(0, -15, HP_BAR_WIDTH, HP_BAR_HEIGHT, 0x00ff00)
+            .setOrigin(0.5);
+          const enemySprite = this.add.sprite(0, 0, 'enemy');
+          const enemyContainer = this.add.container(x, y, [
+            hpBarBg,
+            hpBar,
+            enemySprite,
+          ]);
+
+          enemyContainer.setSize(16, 16);
+          this.physics.world.enable(enemyContainer);
+
+          enemyContainer.setData('health', MAX_ENEMY_HP);
+          enemyContainer.setData('hpBar', hpBar);
+          enemyContainer.setData('laneIndex', laneIndex);
+          enemyContainer.setData('pathProgress', 0);
+
+          enemyContainer.body.setVelocityX(-120);
+          enemyContainer.body.setAllowGravity(false);
+
+          this.enemies.add(enemyContainer);
+        }
+
+        findNearestEnemy() {
+          let nearestEnemy = null;
+          let minDistance = Number.MAX_VALUE;
+
+          this.enemies.getChildren().forEach((enemyContainer) => {
+            if (enemyContainer.active) {
+              const distance = Phaser.Math.Distance.Between(
+                this.player.x,
+                this.player.y,
+                enemyContainer.x,
+                enemyContainer.y
+              );
+              if (distance < minDistance) {
+                minDistance = distance;
+                nearestEnemy = enemyContainer;
+              }
+            }
+          });
+          return nearestEnemy;
+        }
+
+        handleProjectileHit(projectile, enemyContainer) {
+          // Check if the container is still active (not already destroyed)
+          if (!enemyContainer.active) {
+            return;
+          }
+
+          projectile.destroy();
+
+          const health = enemyContainer.getData('health') - 1;
+          enemyContainer.setData('health', health);
+          this.showDamageText(enemyContainer.x, enemyContainer.y, 666);
+
+          // Check if enemy is still alive before updating HP bar
+          if (health > 0) {
+            const hpBar = enemyContainer.getData('hpBar');
+            // Additional safety check to ensure hpBar still exists
+            if (hpBar && hpBar.active) {
+              hpBar.width = (health / MAX_ENEMY_HP) * HP_BAR_WIDTH;
+            }
+          } else {
+            // Enemy is dead - destroy it
+            this.enemies.remove(enemyContainer, true); // Remove from group and destroy
+            enemyContainer.destroy(); // Ensure all parts are gone
+            this.score += 10;
+            this.scoreText.setText('Score: ' + this.score);
+          }
+        }
+
+        handlePlayerHit(player, enemyContainer) {
+          if (this.gameOver) return;
+
+          this.gameOver = true;
+          this.physics.pause();
+          this.enemies.getChildren().forEach((c) => {
+            if (c.body) c.body.stop();
+          });
+          player.setTint(0xff0000);
+
+          this.add
+            .text(400, 250, 'GAME OVER', {
+              fontSize: '64px',
+              fill: '#ff0000',
+              stroke: '#fff',
+              strokeThickness: 6,
+            })
+            .setOrigin(0.5);
+          this.add
+            .text(400, 350, 'Click to Restart', {
+              fontSize: '32px',
+              fill: '#fff',
+              stroke: '#000',
+              strokeThickness: 4,
+            })
+            .setOrigin(0.5);
+
+          this.input.once('pointerdown', () => this.scene.restart());
+        }
+
+        fireBreath() {
+          if (this.gameOver) return;
+          const nearestEnemy = this.findNearestEnemy();
+          if (!nearestEnemy) return;
+
+          // Calculate angle to enemy and clamp between -45 and 0 degrees
+          function getFireAngle(playerX, playerY, enemyX, enemyY) {
+            // Calculate angle in radians
+            let angleRad = Math.atan2(enemyY - playerY, enemyX - playerX);
+            // Convert to degrees
+            let angleDeg = angleRad * (180 / Math.PI);
+            // Clamp between -45 and 0
+            return Math.max(-45, Math.min(0, angleDeg));
+          }
+
+          const angle = Phaser.Math.DegToRad(
+            getFireAngle(
+              this.player.x,
+              this.player.y,
+              nearestEnemy.x,
+              nearestEnemy.y
+            )
+          );
+
+          for (let i = 0; i < 5; i++) {
+            const p = this.fireParticles.get(
+              this.player.x + 10,
+              this.player.y + Phaser.Math.Between(-8, 8)
+            );
+            if (p) {
+              p.setActive(true).setVisible(true);
+              p.body.setAllowGravity(true);
+
+              // Spread pattern around -45 degrees
+              const spread = (i - 2) * 0.12; // small spread
+              const launchAngle = angle + spread;
+
+              const velocity = Phaser.Math.Between(450, 650);
+              this.physics.velocityFromRotation(
+                launchAngle,
+                velocity,
+                p.body.velocity
+              );
+              this.time.delayedCall(1500, () => {
+                if (p.active) p.destroy();
+              });
+            }
+          }
+
+          const angleDeg = -15;
+          const angleRad = Phaser.Math.DegToRad(angleDeg);
+
+          // Adjust speed for more curve (lower speed = more curve)
+          const speed = 350; // Try lowering this for more curve
+
+          // Calculate velocity components
+          const velocityX = Math.cos(angleRad) * speed;
+          const velocityY = Math.sin(angleRad) * speed;
+
+          // Create projectile
+          const projectile = this.fireParticles.get(
+            this.player.x,
+            this.player.y,
+            'fire_particle'
+          );
+          if (projectile) {
+            projectile.setActive(true).setVisible(true);
+            projectile.body.allowGravity = true; // Enable gravity for curve
+            projectile.body.velocity.x = velocityX;
+            projectile.body.velocity.y = velocityY;
+          }
+
+          // Increase gravity for more curve (set once, not every shot)
+          this.physics.world.gravity.y = 800; // Increase as needed for more arc
+        }
+
+        showDamageText(x, y, d) {
+          const t = this.add
+            .text(x, y, `-${d}`, {
+              fontSize: '16px',
+              fill: '#ffdd00',
+              stroke: '#000',
+              strokeThickness: 2,
+            })
+            .setOrigin(0.5);
+          this.tweens.add({
+            targets: t,
+            y: y - 50,
+            alpha: 0,
+            duration: 800,
+            ease: 'Cubic.easeOut',
+            onComplete: () => t.destroy(),
+          });
+        }
+      }
+
+      const config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        physics: {
+          default: 'arcade',
+          arcade: {
+            // debug: true
+          },
+        },
+        scene: [GameScene],
+      };
+
+      const game = new Phaser.Game(config);
+    </script>
+  </body>
+</html>
