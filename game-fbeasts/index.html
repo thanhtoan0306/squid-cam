@@ -303,6 +303,42 @@
 
             this.bulletsGroup.add(bullet);
           }
+
+          // Calculate which lane the target is in
+          let laneIndex = 1; // default middle
+          for (let i = 0; i < this.laneYPositions.length; i++) {
+            if (target.y === this.laneYPositions[i]) {
+              laneIndex = i;
+              break;
+            }
+          }
+
+          // Set bullet velocity based on lane
+          let velocityX = 600; // default
+          let velocityY = 0; // default
+
+          if (laneIndex === 2) {
+            // bottom lane
+            velocityX = 800; // increase horizontal speed for bottom lane
+            velocityY = 80; // add a bit more downward arc if needed
+          }
+
+          // Create bullet
+          const bullet = this.physics.add.sprite(
+            player.x + 40,
+            player.y,
+            'bullet'
+          );
+          bullet.setScale(0.5);
+
+          // Set velocity for parabolic arc
+          bullet.body.velocity.x = velocityX;
+          bullet.body.velocity.y = velocityY;
+
+          // Optional: adjust gravity for more arc
+          bullet.body.setGravityY(this.gravity);
+
+          this.bulletsGroup.add(bullet);
         }
 
         updateBullet(bullet) {
@@ -415,22 +451,32 @@
 
           // Check if enemy reaches player
           this.enemiesGroup.children.entries.forEach((enemy) => {
-            if (
-              enemy.active &&
-              this.player.active &&
-              Phaser.Geom.Rectangle.Overlaps(
-                this.player.getBounds(),
-                enemy.getBounds()
-              )
-            ) {
-              // Destroy the collider box if it exists
-              if (enemy.colliderBox) {
-                enemy.colliderBox.destroy();
-                enemy.colliderBox = null;
+            if (enemy.active && this.player.active) {
+              // Get center points
+              const enemyCenter = { x: enemy.x, y: enemy.y };
+              const playerCenter = { x: this.player.x, y: this.player.y };
+
+              // Define a small radius for "center" collision (adjust as needed)
+              const centerRadius = 20;
+
+              // Check if enemy center is within centerRadius of player center
+              const dist = Phaser.Math.Distance.Between(
+                enemyCenter.x,
+                enemyCenter.y,
+                playerCenter.x,
+                playerCenter.y
+              );
+
+              if (dist < centerRadius) {
+                // Destroy the collider box if it exists
+                if (enemy.colliderBox) {
+                  enemy.colliderBox.destroy();
+                  enemy.colliderBox = null;
+                }
+                enemy.destroy();
+                console.log('Player hit at center! Game Over!');
+                // Add game over logic here
               }
-              enemy.destroy();
-              console.log('Player hit! Game Over!');
-              // Add game over logic here
             }
           });
 
