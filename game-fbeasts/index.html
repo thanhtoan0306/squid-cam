@@ -295,12 +295,15 @@
           const enemy = this.add.sprite(x, y, 'zombie_walk_000');
           this.physics.world.enable(enemy);
 
-          // Resize: set height to 30px, maintain aspect ratio
-          const scale = 150 / enemy.height;
+          // Resize: set height to 150px, maintain aspect ratio
+          const scale = 100 / enemy.height;
           enemy.setScale(scale);
 
           // Mirror horizontally so head faces left
           enemy.setFlipX(true);
+
+          // Adjust y so bottom edge sits on the lane line
+          enemy.y = y - enemy.displayHeight / 2;
 
           // Play walk animation
           enemy.anims.play('zombie_walk');
