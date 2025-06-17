@@ -21,7 +21,7 @@
         }
 
         preload() {
-          // Load walk frames as an animation
+          // Load zombie walk frames as before
           for (let i = 0; i <= 9; i++) {
             const frameNum = i.toString().padStart(3, '0');
             this.load.image(
@@ -29,20 +29,14 @@
               `assets/ZombieOGA/Walk/__Zombie01_Walk_${frameNum}.png`
             );
           }
+          // Load wizard attack spritesheet
+          this.load.spritesheet('wizard_attack1', 'assets/wizard_attack1.png', {
+            frameWidth: 231,
+            frameHeight: 190,
+          });
         }
 
         create() {
-          // Create single player
-          this.player = this.add.rectangle(
-            50,
-            this.sys.game.config.height / 2,
-            40,
-            60,
-            0x00ff00
-          );
-          this.physics.world.enable(this.player);
-          this.player.body.setCollideWorldBounds(true);
-
           // Define the Y positions for the three lanes
           this.laneYPositions = [
             this.sys.game.config.height * 0.35, // Top lane
@@ -59,6 +53,40 @@
               new Phaser.Geom.Line(0, y, this.sys.game.config.width, y)
             );
           });
+
+          // Create wizard attack animation
+          this.anims.create({
+            key: 'wizard_attack1_anim',
+            frames: this.anims.generateFrameNumbers('wizard_attack1', {
+              start: 0,
+              end: 7,
+            }),
+            frameRate: 10,
+            repeat: -1,
+          });
+
+          // --- Replace rectangle player with wizard sprite ---
+          // Desired height for wizard (e.g. 60px, similar to old rectangle)
+          const desiredHeight = 60;
+          // Place on middle lane, left side
+          const playerX = 50;
+          const playerLaneY = this.laneYPositions[1];
+
+          // Create wizard sprite
+          this.player = this.add.sprite(playerX, 0, 'wizard_attack1', 0);
+          this.physics.world.enable(this.player);
+
+          // Scale wizard to desired height
+          const scale = desiredHeight / this.player.height;
+          this.player.setScale(scale);
+
+          // Align bottom edge to lane line
+          this.player.y = playerLaneY - this.player.displayHeight / 2;
+
+          // Play attack animation
+          this.player.anims.play('wizard_attack1_anim');
+
+          this.player.body.setCollideWorldBounds(true);
 
           // Create enemies group
           this.enemiesGroup = this.add.group();
