@@ -66,7 +66,7 @@
           });
 
           // --- Replace rectangle player with wizard sprite ---
-          const desiredHeight = 60;
+          const desiredHeight = 60 * 3; // 4x bigger than before
           const playerX = 50;
           const playerLaneY = this.laneYPositions[1];
 
@@ -76,7 +76,7 @@
           const scale = desiredHeight / this.player.height;
           this.player.setScale(scale);
 
-          this.player.y = playerLaneY - this.player.displayHeight / 2;
+          this.player.y = playerLaneY;
 
           // Do NOT play animation here; only play when shooting
 
