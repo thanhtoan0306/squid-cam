@@ -40,6 +40,14 @@
             frameHeight: 190,
           });
           this.load.image('bullet_particle', 'assets/blue.png'); // Load the glow image
+
+          // Load explosion animation frames
+          for (let i = 1; i <= 10; i++) {
+            this.load.image(
+              `explosion_${i}`,
+              `assets/Explosion_lightning/Explosion_${i}.png`
+            );
+          }
         }
 
         create() {
@@ -137,6 +145,16 @@
 
           // Keep your existing bullet group for logic
           this.bulletsGroup = this.physics.add.group();
+
+          // Create explosion animation
+          this.anims.create({
+            key: 'explosion',
+            frames: Array.from({ length: 10 }, (_, i) => ({
+              key: `explosion_${i + 1}`,
+            })),
+            frameRate: 48,
+            hideOnComplete: true,
+          });
         }
 
         update() {
@@ -388,6 +406,16 @@
             bullet.x > this.sys.game.config.width ||
             bullet.x < 0
           ) {
+            const explosion = this.add.sprite(
+              bullet.x,
+              bullet.y,
+              'explosion_1'
+            );
+            explosion.setScale(0.2); // Adjust scale as needed
+            explosion.on('animationcomplete', () => {
+              explosion.destroy();
+            });
+            explosion.play('explosion');
             bullet.destroy();
           }
         }
@@ -456,6 +484,16 @@
                 if (
                   Phaser.Geom.Rectangle.Overlaps(bullet.getBounds(), centerRect)
                 ) {
+                  const explosion = this.add.sprite(
+                    bullet.x,
+                    bullet.y,
+                    'explosion_1'
+                  );
+                  explosion.setScale(0.2); // Adjust scale as needed
+                  explosion.on('animationcomplete', () => {
+                    explosion.destroy();
+                  });
+                  explosion.play('explosion');
                   // Bullet hit the center of the enemy!
                   bullet.destroy();
                   enemy.hp -= 1;
