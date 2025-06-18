@@ -48,6 +48,12 @@
               `assets/Explosion_lightning/Explosion_${i}.png`
             );
           }
+
+          // Load the avatar image
+          this.load.image(
+            'avatarGojo',
+            'https://plus.unsplash.com/premium_photo-1745950166788-96be20d65198?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+          );
         }
 
         create() {
@@ -207,6 +213,13 @@
               this.bulletEmitter.emitParticle(1, bullet.x, bullet.y);
             }
           });
+
+          // Update avatar positions
+          this.enemiesGroup.getChildren().forEach((enemy) => {
+            if (enemy.update) {
+              enemy.update();
+            }
+          });
         }
 
         findNearestEnemy(player) {
@@ -282,7 +295,7 @@
           const startX = player.x + 20;
           const startY = player.y;
           const enemy_vx = -50; // Enemy speed in pixels per second
-          const bulletSpeed = 450; // Desired speed of our bullets
+          const bulletSpeed = 350; // Desired speed of our bullets
 
           // --- Predictive Aiming Calculation ---
           // 1. Estimate flight time based on current distance and a desired bullet speed.
@@ -462,6 +475,66 @@
           box.y = enemy.y;
           enemy.colliderBox = box;
           enemy.hasColliderBox = true;
+          box.setVisible(false); // Hide the collider box by default
+
+          // Create a container to hold the avatar and its mask
+          const avatarContainer = this.add.container(
+            enemy.x,
+            enemy.y - enemy.displayHeight / 2 - 20
+          );
+
+          // Add the avatar image (use your local image path)
+          const avatar = this.add.image(0, 0, 'avatarGojo');
+
+          // Scale down the avatar - use avatarScale instead of scale
+          const avatarSize = 50; // Final diameter in pixels
+          const avatarScale =
+            avatarSize / Math.max(avatar.width, avatar.height);
+          avatar.setScale(avatarScale); // Renamed from scale to avatarScale
+
+          // Create a white circular border
+          const borderSize = 2;
+          const border = this.add.circle(
+            0,
+            0,
+            avatarSize / 2 + borderSize,
+            0xffffff
+          );
+          border.setDepth(1);
+
+          // Create the circular mask
+          const mask = this.make.graphics();
+          mask.fillCircle(0, 0, avatarSize / 2);
+          const circleMask = mask.createGeometryMask();
+
+          // Apply the mask to the avatar
+          // avatar.setMask(circleMask);
+          // avatar.setDepth(2);
+
+          // Add everything to the container (border first, then avatar)
+          // avatarContainer.add(border);
+          avatarContainer.add(avatar);
+          avatarContainer.setDepth(10);
+
+          // Store reference on the enemy
+          enemy.avatarContainer = avatarContainer;
+
+          // Update function to follow enemy
+          enemy.update = function () {
+            if (this.active && this.avatarContainer) {
+              this.avatarContainer.x = this.x;
+              this.avatarContainer.y = this.y - this.displayHeight / 2 - 20;
+            }
+          };
+
+          // Clean up on destroy
+          const originalDestroy = enemy.destroy;
+          enemy.destroy = function () {
+            if (this.avatarContainer) {
+              this.avatarContainer.destroy();
+            }
+            originalDestroy.apply(this);
+          };
         }
 
         checkCollisions() {
