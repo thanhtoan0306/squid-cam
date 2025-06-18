@@ -125,16 +125,18 @@
             this
           );
 
-          // --- CORRECTED PARTICLE CREATION ---
-          // The 'this.add.particles' method now directly returns the emitter.
-          // We pass the texture key and the config object directly.
+          // Create particle emitter for bullet visuals
           this.bulletEmitter = this.add.particles(0, 0, 'bullet_particle', {
-            speed: 10,
-            lifespan: 400,
-            scale: { start: 0.3, end: 0 },
+            speed: 0, // We'll move particles manually to match bullets
+            scale: { start: 0.6, end: 0.6 },
+            lifespan: 20,
             blendMode: 'ADD',
-            emitting: false, // The new property for 'on: false'
+            quantity: 1,
+            emitting: false,
           });
+
+          // Keep your existing bullet group for logic
+          this.bulletsGroup = this.physics.add.group();
         }
 
         update() {
@@ -177,16 +179,16 @@
             }
           });
 
-          // --- Draw particles for each active bullet ---
+          // Check collisions
+          this.checkCollisions();
+
+          // Update particle positions to match bullets
           this.bulletsGroup.getChildren().forEach((bullet) => {
             if (bullet.active) {
-              // Emit particles at the bullet's current position
+              // Emit particles at bullet position for trail effect
               this.bulletEmitter.emitParticle(1, bullet.x, bullet.y);
             }
           });
-
-          // Check collisions
-          this.checkCollisions();
         }
 
         findNearestEnemy(player) {
@@ -327,6 +329,9 @@
             bullet.gravity = this.gravity;
 
             this.bulletsGroup.add(bullet);
+
+            // Emit just 2 particles when the bullet is created
+            this.bulletEmitter.emitParticle(2, startX, startY);
           }
 
           // Calculate which lane the target is in
