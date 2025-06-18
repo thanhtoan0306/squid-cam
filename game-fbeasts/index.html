@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bullet Game</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js"></script>
+    <style>
+      .test {
+        color: #79a7e4;
+      }
+    </style>
   </head>
   <body>
     <div id="game-container"></div>
@@ -34,6 +39,7 @@
             frameWidth: 231,
             frameHeight: 190,
           });
+          this.load.image('bullet_particle', 'assets/blue.png'); // Load the glow image
         }
 
         create() {
@@ -118,6 +124,17 @@
             },
             this
           );
+
+          // --- CORRECTED PARTICLE CREATION ---
+          // The 'this.add.particles' method now directly returns the emitter.
+          // We pass the texture key and the config object directly.
+          this.bulletEmitter = this.add.particles(0, 0, 'bullet_particle', {
+            speed: 10,
+            lifespan: 400,
+            scale: { start: 0.3, end: 0 },
+            blendMode: 'ADD',
+            emitting: false, // The new property for 'on: false'
+          });
         }
 
         update() {
@@ -157,6 +174,14 @@
             if (enemy.hasColliderBox && enemy.colliderBox) {
               enemy.colliderBox.x = enemy.x;
               enemy.colliderBox.y = enemy.y;
+            }
+          });
+
+          // --- Draw particles for each active bullet ---
+          this.bulletsGroup.getChildren().forEach((bullet) => {
+            if (bullet.active) {
+              // Emit particles at the bullet's current position
+              this.bulletEmitter.emitParticle(1, bullet.x, bullet.y);
             }
           });
 
@@ -293,7 +318,7 @@
             const vy = Math.sin(currentAngle) * power;
 
             // Create bullet
-            const bullet = this.add.circle(startX, startY, 5, 0xffff00);
+            const bullet = this.add.circle(startX, startY, 10, 0x79a7e4);
             this.physics.world.enable(bullet);
 
             // Set bullet properties based on calculated trajectory
@@ -383,8 +408,8 @@
           // Play walk animation
           enemy.anims.play('zombie_walk');
 
-          // Give the enemy 10 HP
-          enemy.hp = 10;
+          // Give the enemy 20 HP
+          enemy.hp = 20;
 
           this.enemiesGroup.add(enemy);
 
