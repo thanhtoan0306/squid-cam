@@ -47,10 +47,13 @@
             );
           }
           // Load wizard attack spritesheet
-          this.load.spritesheet('wizard_attack1', 'assets/wizard_attack1.png', {
-            frameWidth: 231,
-            frameHeight: 190,
-          });
+          for (let i = 0; i <= 7; i++) {
+            const frameNum = i.toString().padStart(2, '0');
+            this.load.image(
+              `guangzu_0000${frameNum}`,
+              `assets/Guangzu/0300${frameNum}.png`
+            );
+          }
           this.load.image('bullet_particle', 'assets/blue.png'); // Load the glow image
 
           // Load explosion animation frames
@@ -96,16 +99,22 @@
               new Phaser.Geom.Line(0, y, this.sys.game.config.width, y)
             );
           });
-
           // Create wizard attack animation with faster frameRate
+
           this.anims.create({
-            key: 'wizard_attack1_anim',
-            frames: this.anims.generateFrameNumbers('wizard_attack1', {
-              start: 0,
-              end: 7,
-            }),
-            frameRate: 20, // Increased speed (was 10)
-            repeat: 0, // Play once per shot
+            key: 'guangzu_anim',
+            frames: [
+              { key: 'guangzu_000000' },
+              { key: 'guangzu_000001' },
+              { key: 'guangzu_000002' },
+              { key: 'guangzu_000003' },
+              { key: 'guangzu_000004' },
+              { key: 'guangzu_000005' },
+              { key: 'guangzu_000006' },
+              { key: 'guangzu_000007' },
+            ],
+            frameRate: 20,
+            repeat: 0,
           });
 
           // --- Replace rectangle player with wizard sprite ---
@@ -113,7 +122,8 @@
           const playerX = 50;
           const playerLaneY = this.laneYPositions[1];
 
-          this.player = this.add.sprite(playerX, 0, 'wizard_attack1', 0);
+          this.player = this.add.sprite(playerX, 0, 'guangzu_000000', 0);
+
           this.physics.world.enable(this.player);
 
           const scale = desiredHeight / this.player.height;
@@ -345,11 +355,11 @@
 
         playerShoot() {
           // Play attack animation when shooting
-          this.player.anims.play('wizard_attack1_anim', true);
+          this.player.anims.play('guangzu_anim', true);
 
           // When animation completes, set to first frame (idle pose)
           this.player.on(
-            'animationcomplete-wizard_attack1_anim',
+            'animationcomplete-guangzu_anim',
             () => {
               this.player.setFrame(0);
             },
