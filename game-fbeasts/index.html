@@ -22,8 +22,13 @@
           this.player = null;
           this.gravity = 500; // Gravity constant for calculations
           this.lastShotTime = 0;
-          this.fireLocked = false; // <-- Add this line
-          // this.shotCooldown = 800; // This will now be dynamic
+          this.fireLocked = false;
+
+          // === Adjustable variables ===
+          this.enemyHP = 10; // Default HP for each enemy
+          this.baseCooldown = 600; // Base attack cooldown in ms
+          this.reductionPerEnemy = 20; // Cooldown reduction per enemy
+          this.minCooldown = 50; // Minimum cooldown
         }
 
         preload() {
@@ -191,7 +196,7 @@
           const numEnemies = this.enemiesGroup.getLength();
 
           // --- Dynamic Cooldown Calculation for a continuous stream ---
-          const baseCooldown = 1000; // Base time between single shots
+          const baseCooldown = this.baseCooldown; // Base time between single shots
           const reductionPerEnemy = 20; // Reduce cooldown for each additional enemy
           const minCooldown = 50; // The absolute fastest firing rate
 
@@ -514,7 +519,7 @@
           enemy.anims.play('zombie_walk');
 
           // Give the enemy 20 HP
-          enemy.hp = 20;
+          enemy.hp = this.enemyHP;
 
           this.enemiesGroup.add(enemy);
 
