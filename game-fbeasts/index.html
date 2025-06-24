@@ -22,6 +22,7 @@
           this.player = null;
           this.gravity = 500; // Gravity constant for calculations
           this.lastShotTime = 0;
+          this.fireLocked = false; // <-- Add this line
           // this.shotCooldown = 800; // This will now be dynamic
         }
 
@@ -161,6 +162,12 @@
             frameRate: 48,
             hideOnComplete: true,
           });
+
+          // Add key input for toggling fire lock
+          this.input.keyboard.on('keydown-A', () => {
+            this.fireLocked = !this.fireLocked;
+            console.log('Player fire locked:', this.fireLocked);
+          });
         }
 
         update() {
@@ -177,7 +184,11 @@
           dynamicCooldown = Math.max(dynamicCooldown, minCooldown); // Ensure cooldown doesn't go below minimum
 
           // Continuously shoot if enemies exist and cooldown is over
-          if (numEnemies > 0 && time > this.lastShotTime + dynamicCooldown) {
+          if (
+            !this.fireLocked &&
+            numEnemies > 0 &&
+            time > this.lastShotTime + dynamicCooldown
+          ) {
             this.playerShoot();
             this.lastShotTime = time;
           }
