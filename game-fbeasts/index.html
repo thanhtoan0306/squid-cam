@@ -36,6 +36,7 @@
             'explosionSound',
             'assets/sounds/energyshot-impact4.wav'
           );
+          this.load.image('bg', 'assets/bg1.png');
 
           // Load zombie walk frames as before
           for (let i = 0; i <= 9; i++) {
@@ -70,6 +71,16 @@
 
         create() {
           // Define the Y positions for the three lanes
+          this.add
+            .image(
+              this.sys.game.config.width / 2,
+              this.sys.game.config.height / 2 - 100,
+              'bg'
+            )
+            .setDisplaySize(
+              this.sys.game.config.width,
+              this.sys.game.config.height
+            );
           this.laneYPositions = [
             this.sys.game.config.height * 0.35, // Top lane
             this.sys.game.config.height * 0.5, // Middle lane
