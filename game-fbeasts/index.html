@@ -32,6 +32,11 @@
         }
 
         preload() {
+          this.load.audio(
+            'explosionSound',
+            'assets/sounds/energyshot-impact4.wav'
+          );
+
           // Load zombie walk frames as before
           for (let i = 0; i <= 9; i++) {
             const frameNum = i.toString().padStart(3, '0');
@@ -680,6 +685,7 @@
                     explosion.destroy();
                   });
                   explosion.play('explosion');
+                  this.sound.play('explosionSound', { volume: 0.5 });
                   // Bullet hit the center of the enemy!
                   bullet.destroy();
                   enemy.hp -= 1;
