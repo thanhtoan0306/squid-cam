@@ -168,6 +168,22 @@
             this.fireLocked = !this.fireLocked;
             console.log('Player fire locked:', this.fireLocked);
           });
+
+          // Add a wall sprite or rectangle in front of the player
+          const wallX = this.player.x + 200; // Adjust distance as needed
+          const wallY = this.player.y;
+          const wallHeight = 380;
+          const wallWidth = 20;
+
+          // Use a graphics rectangle for the wall
+          this.wall = this.add.rectangle(
+            wallX,
+            wallY,
+            wallWidth,
+            wallHeight,
+            0x888888
+          );
+          this.physics.add.existing(this.wall, true); // true = static body
         }
 
         update() {
@@ -175,7 +191,7 @@
           const numEnemies = this.enemiesGroup.getLength();
 
           // --- Dynamic Cooldown Calculation for a continuous stream ---
-          const baseCooldown = 250; // Base time between single shots
+          const baseCooldown = 1000; // Base time between single shots
           const reductionPerEnemy = 20; // Reduce cooldown for each additional enemy
           const minCooldown = 50; // The absolute fastest firing rate
 
@@ -200,9 +216,24 @@
 
           // Update enemies
           this.enemiesGroup.children.entries.forEach((enemy) => {
-            enemy.x -= 0.8; // Slowed down enemy speed
-            if (enemy.x < 0) {
-              enemy.destroy(); // Remove if it goes off-screen
+            // Check collision with wall
+            if (
+              enemy.active &&
+              Phaser.Geom.Intersects.RectangleToRectangle(
+                enemy.getBounds(),
+                this.wall.getBounds()
+              )
+            ) {
+              // Block enemy at the wall
+              enemy.x =
+                this.wall.x + this.wall.width / 2 + enemy.displayWidth / 2;
+              // Optionally, stop enemy animation or movement here
+            } else {
+              // Only move if not blocked
+              enemy.x -= 0.8;
+              if (enemy.x < 0) {
+                enemy.destroy();
+              }
             }
           });
 
