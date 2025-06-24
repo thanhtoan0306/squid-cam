@@ -237,6 +237,23 @@
             }
           });
 
+          // After moving enemies, enforce 30px spacing between them on the same lane
+          const sortedEnemies = this.enemiesGroup
+            .getChildren()
+            .slice()
+            .sort((a, b) => a.x - b.x);
+          for (let i = 1; i < sortedEnemies.length; i++) {
+            const prev = sortedEnemies[i - 1];
+            const curr = sortedEnemies[i];
+            // Only block if on the same lane (same y)
+            if (Math.abs(prev.y - curr.y) < 1) {
+              // If the enemy behind is too close, push it back
+              if (curr.x - prev.x < 30) {
+                curr.x = prev.x + 30;
+              }
+            }
+          }
+
           // Update collider box positions for all enemies
           this.enemiesGroup.getChildren().forEach((enemy) => {
             if (enemy.hasColliderBox && enemy.colliderBox) {
