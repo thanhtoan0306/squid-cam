@@ -599,6 +599,54 @@
             }
             originalDestroy.apply(this);
           };
+
+          // --- Add HP bar as individual units ---
+          const barWidth = 40;
+          const barHeight = 10;
+          const barOffsetY = enemy.displayHeight / 2 + 16;
+          const hpUnits = this.enemyHP; // Number of dots = max HP
+          const unitSpacing = barWidth / hpUnits;
+
+          enemy.hpBarDots = [];
+          const hpBarContainer = this.add.container(
+            enemy.x,
+            enemy.y - barOffsetY
+          );
+          hpBarContainer.setDepth(20);
+
+          for (let i = 0; i < hpUnits; i++) {
+            // Start with all dots green
+            const dot = this.add.circle(
+              -barWidth / 2 + i * unitSpacing + unitSpacing / 2,
+              0,
+              barHeight / 2,
+              0x00ff00
+            );
+            hpBarContainer.add(dot);
+            enemy.hpBarDots.push(dot);
+          }
+
+          enemy.hpBarContainer = hpBarContainer;
+          enemy.maxHp = enemy.hp;
+
+          // Update function to move HP bar with enemy
+          const oldUpdate = enemy.update;
+          enemy.update = function () {
+            if (oldUpdate) oldUpdate.call(this);
+            if (this.hpBarContainer) {
+              this.hpBarContainer.x = this.x;
+              this.hpBarContainer.y = this.y - barOffsetY;
+            }
+          };
+
+          // Destroy HP bar when enemy is destroyed
+          const oldDestroy = enemy.destroy;
+          enemy.destroy = function () {
+            if (this.hpBarContainer) {
+              this.hpBarContainer.destroy();
+            }
+            if (oldDestroy) oldDestroy.call(this);
+          };
         }
 
         checkCollisions() {
@@ -634,7 +682,16 @@
                   // Bullet hit the center of the enemy!
                   bullet.destroy();
                   enemy.hp -= 1;
-
+                  // Update HP bar dots: green for remaining HP, red for lost HP
+                  if (enemy.hpBarDots) {
+                    for (let i = 0; i < enemy.maxHp; i++) {
+                      if (i < enemy.hp) {
+                        enemy.hpBarDots[i].setFillStyle(0x00ff00); // Green for remaining HP
+                      } else {
+                        enemy.hpBarDots[i].setFillStyle(0xff0000); // Red for lost HP
+                      }
+                    }
+                  }
                   if (enemy.hp <= 0) {
                     if (enemy.colliderBox) {
                       enemy.colliderBox.destroy();
