@@ -58,7 +58,8 @@
           // Load the avatar image
           this.load.image(
             'avatarGojo',
-            'https://plus.unsplash.com/premium_photo-1745950166788-96be20d65198?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
+            'assets/blue.png'
+            // 'https://plus.unsplash.com/premium_photo-1745950166788-96be20d65198?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
           );
         }
 
@@ -551,7 +552,7 @@
           const avatar = this.add.image(0, 0, 'avatarGojo');
 
           // Scale down the avatar - use avatarScale instead of scale
-          const avatarSize = 50; // Final diameter in pixels
+          const avatarSize = 100; // Final diameter in pixels
           const avatarScale =
             avatarSize / Math.max(avatar.width, avatar.height);
           avatar.setScale(avatarScale); // Renamed from scale to avatarScale
@@ -603,7 +604,7 @@
           // --- Add HP bar as individual units ---
           const barWidth = 40;
           const barHeight = 10;
-          const barOffsetY = enemy.displayHeight / 2 + 16;
+          const barOffsetY = enemy.displayHeight / 2 - 15;
           const hpUnits = this.enemyHP; // Number of dots = max HP
           const unitSpacing = barWidth / hpUnits;
 
@@ -766,8 +767,8 @@
       // Game configuration
       const config = {
         type: Phaser.AUTO,
-        width: 1400,
-        height: 1000,
+        width: 1000,
+        height: 800,
         physics: {
           default: 'arcade',
           arcade: {
