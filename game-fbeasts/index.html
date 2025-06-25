@@ -54,6 +54,16 @@
               `assets/Guangzu/0300${frameNum}.png`
             );
           }
+
+          // Load GZ Idle frames
+          for (let i = 0; i <= 5; i++) {
+            const frameNum = i.toString().padStart(2, '0');
+            this.load.image(
+              `gz_idle_${frameNum}`,
+              `assets/GZ_Idle/0300${frameNum}.png`
+            );
+          }
+
           this.load.image('bullet_particle', 'assets/blue.png'); // Load the glow image
 
           // Load explosion animation frames
@@ -115,6 +125,20 @@
             ],
             frameRate: 22,
             repeat: 0,
+          });
+
+          this.anims.create({
+            key: 'gz_idle',
+            frames: [
+              { key: 'gz_idle_00' },
+              { key: 'gz_idle_01' },
+              { key: 'gz_idle_02' },
+              { key: 'gz_idle_03' },
+              { key: 'gz_idle_04' },
+              { key: 'gz_idle_05' },
+            ],
+            frameRate: 8,
+            repeat: -1,
           });
 
           // --- Replace rectangle player with wizard sprite ---
@@ -222,6 +246,8 @@
             0x888888
           );
           this.physics.add.existing(this.wall, true); // true = static body
+
+          this.player.anims.play('gz_idle'); // Play idle by default
         }
 
         update() {
@@ -363,14 +389,10 @@
           // Play attack animation when shooting
           this.player.anims.play('guangzu_anim', true);
 
-          // When animation completes, set to first frame (idle pose)
-          this.player.on(
-            'animationcomplete-guangzu_anim',
-            () => {
-              this.player.setFrame(0);
-            },
-            this
-          );
+          // When attack animation completes, return to idle
+          this.player.once('animationcomplete-guangzu_anim', () => {
+            this.player.anims.play('gz_idle');
+          });
 
           const nearestEnemy = this.findNearestEnemy(this.player);
           const farthestEnemy = this.findFarthestEnemy(this.player);
