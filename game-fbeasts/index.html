@@ -118,7 +118,7 @@
           });
 
           // --- Replace rectangle player with wizard sprite ---
-          const desiredHeight = 60 * 4; // 4x bigger than before
+          const desiredHeight = 60 * 8; // 5x bigger than before
           const playerX = 50;
           const playerLaneY = this.laneYPositions[1];
 
@@ -126,14 +126,20 @@
 
           this.physics.world.enable(this.player);
 
+          // Crop 30% from the left
+          const cropX = this.player.width * 0.3;
+          const cropWidth = this.player.width * 0.7;
+          this.player.setCrop(cropX, 0, cropWidth, this.player.height);
+
           const scale = desiredHeight / this.player.height;
           this.player.setScale(scale);
 
+          // Now, player.x = 0 means the left edge is at the scene's left edge
+          this.player.x = playerX; // Or set to 0 for very left
+
           this.player.y = playerLaneY;
 
-          // Do NOT play animation here; only play when shooting
-
-          this.player.body.setCollideWorldBounds(true);
+          this.player.body.setCollideWorldBounds(false);
 
           // Create enemies group
           this.enemiesGroup = this.add.group();
