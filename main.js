@@ -49,7 +49,7 @@ ipcMain.on('open-secondary-window', () => {
       },
       // autoHideMenuBar: true,
     });
-    secondaryWindow.loadFile('./game-rgp-theodoric/index.html');
+    secondaryWindow.loadFile('./game-fbeasts/index.html');
     // secondaryWindow.webContents.openDevTools({ mode: "detach" }); // Optional: DevTools
   } else {
     secondaryWindow.focus();
