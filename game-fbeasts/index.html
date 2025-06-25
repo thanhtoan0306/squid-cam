@@ -77,7 +77,8 @@
           // Load the avatar image
           this.load.image(
             'avatarGojo',
-            'assets/blue.png'
+            'assets/bg1.png'
+            // 'assets/blue.png'
             // 'https://plus.unsplash.com/premium_photo-1745950166788-96be20d65198?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
           );
         }
@@ -613,13 +614,13 @@
 
           // Create a white circular border
           const borderSize = 2;
-          const border = this.add.circle(
+          const border1 = this.add.circle(
             0,
             0,
             avatarSize / 2 + borderSize,
             0xffffff
           );
-          border.setDepth(1);
+          border1.setDepth(1);
 
           // Create the circular mask
           const mask = this.make.graphics();
@@ -702,6 +703,27 @@
             }
             if (oldDestroy) oldDestroy.call(this);
           };
+
+          // Create a circular avatar using ImageCircle
+          const avatarRadius = 50; // or any size you want
+          const avatarCircle = new ImageCircle(
+            this,
+            0, // This should be 0, not enemy.x
+            0, // This should be 0, not enemy.y
+            'avatarGojo',
+            undefined,
+            avatarRadius
+          );
+
+          // Optionally add a border:
+          const border = this.add.graphics();
+          border.lineStyle(2, 0xff0000, 1);
+          border.strokeCircle(0, 0, avatarRadius);
+
+          // Add to container (border first, then avatar)
+          avatarContainer.add(border);
+          avatarContainer.add(avatarCircle);
+          avatarContainer.setDepth(10);
         }
 
         checkCollisions() {
@@ -836,6 +858,43 @@
 
       // Start the game
       const game = new Phaser.Game(config);
+
+      class ImageCircle extends Phaser.GameObjects.Container {
+        image;
+        circle;
+        radius;
+        constructor(scene, x, y, image, frame, radius) {
+          super(scene, x, y);
+          if (typeof image === 'string') {
+            this.image = new Phaser.GameObjects.Image(
+              scene,
+              0,
+              0,
+              image,
+              frame
+            );
+          } else {
+            this.image = image;
+          }
+          this.radius =
+            radius || Math.min(this.image.width, this.image.height) / 2;
+
+          // Create graphics but DO NOT add to scene, just use for mask
+          this.circle = scene.make.graphics({ x: 0, y: 0, add: false });
+          this.circle.fillCircle(0, 0, this.radius);
+
+          this.add(this.image);
+
+          // Mask will now move with the container (enemy)
+          this.image.setMask(this.circle.createGeometryMask());
+        }
+        updateMaskTransform() {
+          const transfrom = this.image.getWorldTransformMatrix();
+          this.circle
+            .setPosition(transfrom.getX(0, 0), transfrom.getY(0, 0))
+            .setScale(transfrom.scaleX, transfrom.scaleY);
+        }
+      }
     </script>
   </body>
 </html>
