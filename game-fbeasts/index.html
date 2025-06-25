@@ -15,22 +15,8 @@
     <div id="game-container"></div>
     <script>
       console.log('Bullet Game Loaded');
+      const emitter = new Phaser.Events.EventEmitter();
 
-      const { ipcRenderer } = window.require('electron');
-      try {
-        // TikTok chat integration
-        ipcRenderer.on('tiktok-chat', (event, data) => {
-          console.log('screen2', data);
-        });
-
-        ipcRenderer.on('tiktok-like', (event, data) => {
-          console.log('tiktok-like', data);
-        });
-      } catch (e) {
-        console.log(e);
-
-        // Not running in Electron, ignore
-      }
       class BulletGame extends Phaser.Scene {
         constructor() {
           super({ key: 'BulletGame' });
@@ -199,6 +185,13 @@
             repeat: -1,
           });
 
+          emitter.on('spawn-enemy', () => {
+            const laneY =
+              this.laneYPositions[
+                Math.floor(Math.random() * this.laneYPositions.length)
+              ];
+            this.spawnEnemy(950, laneY);
+          });
           // Spawn an enemy on mouse click in the nearest lane
           this.input.on(
             'pointerdown',
@@ -833,6 +826,23 @@
 
       // Start the game
       const game = new Phaser.Game(config);
+
+      const { ipcRenderer } = window.require('electron');
+      try {
+        // TikTok chat integration
+        ipcRenderer.on('tiktok-chat', (event, data) => {
+          console.log('screen2', data);
+        });
+
+        ipcRenderer.on('tiktok-like', (event, data) => {
+          console.log('tiktok-like', data);
+          emitter.emit('spawn-enemy');
+        });
+      } catch (e) {
+        console.log(e);
+
+        // Not running in Electron, ignore
+      }
     </script>
   </body>
 </html>
