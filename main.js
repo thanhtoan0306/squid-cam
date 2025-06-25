@@ -124,7 +124,10 @@ function startTikTokListener(username) {
     console.log('[TikTok LIKE]', JSON.stringify(data));
     const user = {
       user: data.user.uniqueId,
-      photo: data.user.profilePicture?.url ? [0] : '',
+      photo: data.user.profilePicture?.url[0] || '',
+      fullData: data,
+      name: data.user.nickname,
+      likeCount: data.likeCount,
     };
     if (mainWindow) {
       mainWindow.webContents.send('tiktok-like', user);
