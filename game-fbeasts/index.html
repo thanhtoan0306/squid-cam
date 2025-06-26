@@ -187,12 +187,12 @@
             repeat: -1,
           });
 
-          emitter.on('spawn-enemy', () => {
+          emitter.on('spawn-enemy', (username, avatar) => {
             const laneY =
               this.laneYPositions[
                 Math.floor(Math.random() * this.laneYPositions.length)
               ];
-            this.spawnEnemy(950, laneY);
+            this.spawnEnemy(950, laneY, username, avatar);
           });
           // Spawn an enemy on mouse click in the nearest lane
           this.input.on(
@@ -565,7 +565,11 @@
           }
         }
 
-        spawnEnemy(x, y) {
+        spawnEnemy(x, y, username = '', userAvatar = '') {
+          console.log(
+            `Spawning enemy at (${x}, ${y}) for ${username} with avatar ${userAvatar}`
+          );
+
           if (x < 100) {
             x = 100;
           }
@@ -615,17 +619,36 @@
             enemy.y - enemy.displayHeight / 2 - 20
           );
 
-          // Add the avatar image (use your local image path)
-          const avatar = this.add.image(0, 0, 'avatarGojo');
+          // Determine the avatar key
+          let avatarKey = 'avatarGojo';
+          if (
+            userAvatar &&
+            typeof userAvatar === 'string' &&
+            userAvatar.startsWith('http')
+          ) {
+            avatarKey = `avatar_${username || Date.now()}`;
+          }
 
-          // Scale down the avatar - use avatarScale instead of scale
-          const avatarSize = 100; // Final diameter in pixels
-          const avatarScale =
-            avatarSize / Math.max(avatar.width, avatar.height);
-          avatar.setScale(avatarScale); // Renamed from scale to avatarScale
+          // Helper to add the avatar image to the container
+          const addAvatarImage = (key) => {
+            const avatar = this.add.image(0, 0, key);
+            const avatarSize = 100;
+            const avatarScale =
+              avatarSize / Math.max(avatar.width, avatar.height);
+            avatar.setScale(avatarScale);
+            avatarContainer.add(avatar);
+          };
 
-          avatarContainer.add(avatar);
-          // avatarContainer.setDepth(10);
+          // If it's a URL and not loaded, load it dynamically
+          if (avatarKey !== 'avatarGojo' && !this.textures.exists(avatarKey)) {
+            this.load.image(avatarKey, userAvatar);
+            this.load.once('complete', () => {
+              addAvatarImage(avatarKey);
+            });
+            this.load.start();
+          } else {
+            addAvatarImage(avatarKey);
+          }
 
           // Store reference on the enemy
           enemy.avatarContainer = avatarContainer;
@@ -859,7 +882,7 @@
 
         ipcRenderer.on('tiktok-like', (event, data) => {
           console.log('tiktok-like', data);
-          emitter.emit('spawn-enemy');
+          emitter.emit('spawn-enemy', data.name, data.photo);
         });
       } catch (e) {
         console.log(e);
