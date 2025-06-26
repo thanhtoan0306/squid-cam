@@ -619,6 +619,18 @@
             enemy.y - enemy.displayHeight / 2 - 20
           );
 
+          // Add username text above the avatar
+          if (username) {
+            const usernameText = this.add.text(0, -60, username, {
+              font: '20px Arial',
+              color: '#ffffff',
+              align: 'center',
+              stroke: '#000',
+              strokeThickness: 4,
+            });
+            usernameText.setOrigin(0.5, 0.5);
+            avatarContainer.add(usernameText);
+          }
           // Determine the avatar key
           let avatarKey = 'avatarGojo';
           if (
