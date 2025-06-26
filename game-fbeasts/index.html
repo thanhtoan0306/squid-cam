@@ -84,6 +84,17 @@
             // 'assets/blue.png'
             // 'https://plus.unsplash.com/premium_photo-1745950166788-96be20d65198?q=80&w=1333&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
           );
+
+          // Load BossEnemy frames
+          for (let i = 0; i <= 7; i++) {
+            const frameNum = i.toString().padStart(6, '0');
+            console.log('asset: ', `assets/boss2/${frameNum}.png`);
+
+            this.load.image(
+              `boss_walk_${frameNum}`,
+              `assets/boss2/${frameNum}.png`
+            );
+          }
         }
 
         create() {
@@ -178,6 +189,15 @@
             repeat: -1,
           });
 
+          this.anims.create({
+            key: 'boss_walk',
+            frames: Array.from({ length: 8 }, (_, i) => ({
+              key: `boss_walk_${i.toString().padStart(6, '0')}`,
+            })),
+            frameRate: 8,
+            repeat: -1,
+          });
+
           emitter.on('spawn-enemy', (username, avatar, userId, likeCount) => {
             for (let i = 0; i < likeCount; i++) {
               const laneY =
@@ -203,7 +223,7 @@
                 }
               }
 
-              this.spawnEnemy(pointer.x, closestLaneY);
+              this.spawnEnemy(pointer.x, closestLaneY, '', '', '', true);
             },
             this
           );
@@ -558,7 +578,14 @@
           }
         }
 
-        spawnEnemy(x, y, username = '', userAvatar = '', userId = '') {
+        spawnEnemy(
+          x,
+          y,
+          username = '',
+          userAvatar = '',
+          userId = '',
+          isBoss = false
+        ) {
           console.log(
             `Spawning enemy at (${x}, ${y}) for ${username} with avatar ${userAvatar}`
           );
@@ -567,24 +594,31 @@
             x = 100;
           }
           // Create enemy as a sprite and play walk animation
-          const enemy = this.add.sprite(x, y, 'zombie_walk_000');
+          let enemy;
+          if (isBoss) {
+            enemy = this.add.sprite(x, y, 'boss_walk_000000');
+            enemy.anims.play('boss_walk');
+            enemy.setScale(1.5); // Boss is bigger
+            enemy.hp = this.enemyHP * 10; // Boss has more HP
+          } else {
+            enemy = this.add.sprite(x, y, 'zombie_walk_000');
+            enemy.anims.play('zombie_walk');
+            enemy.setScale(0.9);
+            enemy.hp = this.enemyHP;
+            enemy.setFlipX(true);
+          }
+
           this.physics.world.enable(enemy);
 
           // Resize: set height to 90px (3x bigger), maintain aspect ratio
-          const scale = 90 / enemy.height;
-          enemy.setScale(scale);
-
-          // Mirror horizontally so head faces left
-          enemy.setFlipX(true);
+          // const scale = 90 / enemy.height;
+          // enemy.setScale(scale);
 
           // Align bottom edge to lane line
           enemy.y = y - enemy.displayHeight / 2;
 
-          // Play walk animation
-          enemy.anims.play('zombie_walk');
-
           // Give the enemy 20 HP
-          enemy.hp = this.enemyHP;
+          // enemy.hp = this.enemyHP;
 
           this.enemiesGroup.add(enemy);
 
@@ -604,7 +638,7 @@
           box.y = enemy.y;
           enemy.colliderBox = box;
           enemy.hasColliderBox = true;
-          box.setVisible(false); // Hide the collider box by default
+          box.setVisible(true); // Hide the collider box by default
 
           // Create a container to hold the avatar and its mask
           const avatarContainer = this.add.container(
@@ -694,7 +728,7 @@
           const barWidth = 40;
           const barHeight = 10;
           const barOffsetY = enemy.displayHeight / 2 - 35;
-          const hpUnits = this.enemyHP; // Number of dots = max HP
+          const hpUnits = enemy.hp;
           const unitSpacing = barWidth / hpUnits;
 
           enemy.hpBarDots = [];
