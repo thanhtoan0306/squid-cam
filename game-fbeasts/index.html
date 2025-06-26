@@ -87,6 +87,8 @@
         }
 
         create() {
+          this.sys.game.events.off('blur', this.scene.pause, this);
+          this.sys.game.events.off('pause', this.scene.pause, this);
           // Define the Y positions for the three lanes
           this.add
             .image(
@@ -822,11 +824,32 @@
           },
         },
         scene: BulletGame,
+        audio: {
+          disableWebAudio: false,
+        },
+        // Add these two lines:
+        autoPause: false,
+        autoFocus: true,
       };
 
       // Start the game
       const game = new Phaser.Game(config);
-
+      game.events.off('blur', game.scene.pause);
+      game.events.off('focus', game.scene.resume);
+      game.events.on('hidden', () => {
+        game.sound.context.resume();
+        game.scene.resume();
+      });
+      game.events.on('visible', () => {
+        game.sound.context.resume();
+        game.scene.resume();
+      });
+      window.addEventListener('blur', () => {
+        game.sound.context.resume();
+      });
+      window.addEventListener('focus', () => {
+        game.sound.context.resume();
+      });
       const { ipcRenderer } = window.require('electron');
       try {
         // TikTok chat integration
