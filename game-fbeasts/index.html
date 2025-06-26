@@ -106,15 +106,6 @@
             this.sys.game.config.height * 0.65, // Bottom lane
           ];
 
-          // Draw the lanes
-          const graphics = this.add.graphics({
-            lineStyle: { width: 2, color: 0xffa500 },
-          });
-          this.laneYPositions.forEach((y) => {
-            graphics.strokeLineShape(
-              new Phaser.Geom.Line(0, y, this.sys.game.config.width, y)
-            );
-          });
           // Create wizard attack animation with faster frameRate
 
           this.anims.create({
