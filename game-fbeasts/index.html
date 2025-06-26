@@ -149,7 +149,7 @@
 
           // --- Replace rectangle player with wizard sprite ---
           const desiredHeight = 60 * 10; // 5x bigger than before
-          const playerX = 100;
+          const playerX = 150;
           const playerLaneY = this.laneYPositions[1];
 
           this.player = this.add.sprite(playerX, 0, 'guangzu_000000', 0);
@@ -245,7 +245,7 @@
           });
 
           // Add a wall sprite or rectangle in front of the player
-          const wallX = this.player.x + 200; // Adjust distance as needed
+          const wallX = this.player.x + 150; // Adjust distance as needed
           const wallY = this.player.y;
           const wallHeight = 380;
           const wallWidth = 20;
@@ -685,7 +685,7 @@
           // --- Add HP bar as individual units ---
           const barWidth = 40;
           const barHeight = 10;
-          const barOffsetY = enemy.displayHeight / 2 - 15;
+          const barOffsetY = enemy.displayHeight / 2 - 35;
           const hpUnits = this.enemyHP; // Number of dots = max HP
           const unitSpacing = barWidth / hpUnits;
 
