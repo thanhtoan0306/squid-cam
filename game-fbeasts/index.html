@@ -29,7 +29,7 @@
 
           // === Adjustable variables ===
           this.enemyHP = 10; // Default HP for each enemy
-          this.baseCooldown = 600; // Base attack cooldown in ms
+          this.baseCooldown = 1000; // Base attack cooldown in ms
           this.reductionPerEnemy = 20; // Cooldown reduction per enemy
           this.minCooldown = 50; // Minimum cooldown
         }
@@ -618,12 +618,12 @@
           // Create a container to hold the avatar and its mask
           const avatarContainer = this.add.container(
             enemy.x,
-            enemy.y - enemy.displayHeight / 2 - 20
+            enemy.y - enemy.displayHeight / 2 - 200
           );
 
           // Add username text above the avatar
           if (username) {
-            const usernameText = this.add.text(0, -60, username, {
+            const usernameText = this.add.text(0, -40, username, {
               font: '20px Arial',
               color: '#ffffff',
               align: 'center',
@@ -645,8 +645,23 @@
 
           // Helper to add the avatar image to the container
           const addAvatarImage = (key) => {
+            const avatarSize = 50;
+
+            // Draw silver border (rectangle)
+            const border = this.add.graphics();
+            border.lineStyle(4, 0xc0c0c0, 1); // Silver color, 4px width
+            border.strokeRect(
+              -avatarSize / 2,
+              -avatarSize / 2,
+              avatarSize,
+              avatarSize
+            );
+
+            // Add border to container first (so it's behind the avatar)
+            avatarContainer.add(border);
+
+            // Add avatar image
             const avatar = this.add.image(0, 0, key);
-            const avatarSize = 100;
             const avatarScale =
               avatarSize / Math.max(avatar.width, avatar.height);
             avatar.setScale(avatarScale);
@@ -671,7 +686,7 @@
           enemy.update = function () {
             if (this.active && this.avatarContainer) {
               this.avatarContainer.x = this.x;
-              this.avatarContainer.y = this.y - this.displayHeight / 2 - 20;
+              this.avatarContainer.y = this.y - this.displayHeight / 2 + 10;
             }
           };
 
