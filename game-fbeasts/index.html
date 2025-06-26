@@ -187,12 +187,14 @@
             repeat: -1,
           });
 
-          emitter.on('spawn-enemy', (username, avatar) => {
-            const laneY =
-              this.laneYPositions[
-                Math.floor(Math.random() * this.laneYPositions.length)
-              ];
-            this.spawnEnemy(950, laneY, username, avatar);
+          emitter.on('spawn-enemy', (username, avatar, userId, likeCount) => {
+            for (let i = 0; i < likeCount; i++) {
+              const laneY =
+                this.laneYPositions[
+                  Math.floor(Math.random() * this.laneYPositions.length)
+                ];
+              this.spawnEnemy(950, laneY, username, avatar, userId);
+            }
           });
           // Spawn an enemy on mouse click in the nearest lane
           this.input.on(
@@ -565,7 +567,7 @@
           }
         }
 
-        spawnEnemy(x, y, username = '', userAvatar = '') {
+        spawnEnemy(x, y, username = '', userAvatar = '', userId = '') {
           console.log(
             `Spawning enemy at (${x}, ${y}) for ${username} with avatar ${userAvatar}`
           );
@@ -894,7 +896,13 @@
 
         ipcRenderer.on('tiktok-like', (event, data) => {
           console.log('tiktok-like', data);
-          emitter.emit('spawn-enemy', data.name, data.photo);
+          emitter.emit(
+            'spawn-enemy',
+            data.name,
+            data.photo,
+            data.user,
+            data.likeCount
+          );
         });
       } catch (e) {
         console.log(e);
