@@ -625,12 +625,39 @@
           // --- Draw red box collider for enemy ---
           const box = this.add.graphics();
           box.lineStyle(2, 0xff0000, 1);
-          box.strokeRect(
-            -enemy.displayWidth / 2,
-            -enemy.displayHeight / 2,
-            enemy.displayWidth,
-            enemy.displayHeight
-          );
+
+          if (isBoss) {
+            const leftPadding = -30;
+            const bottomPadding = -30;
+            // Draw debug box with 30px left and bottom padding
+            box.strokeRect(
+              -enemy.displayWidth / 2 - leftPadding, // 30px left
+              -enemy.displayHeight / 2,
+              enemy.displayWidth + leftPadding, // wider
+              enemy.displayHeight + bottomPadding // taller (bottom)
+            );
+            // Adjust physics body size and offset to match the box
+            enemy.body.setSize(
+              enemy.displayWidth + leftPadding, // wider
+              enemy.displayHeight + bottomPadding // taller
+            );
+            enemy.body.setOffset(
+              -enemy.displayWidth / 2 - leftPadding, // match left
+              -enemy.displayHeight / 2 // match top
+            );
+          } else {
+            box.strokeRect(
+              -enemy.displayWidth / 2,
+              -enemy.displayHeight / 2,
+              enemy.displayWidth,
+              enemy.displayHeight
+            );
+            enemy.body.setSize(enemy.displayWidth, enemy.displayHeight);
+            enemy.body.setOffset(
+              -enemy.displayWidth / 2,
+              -enemy.displayHeight / 2
+            );
+          }
           box.setDepth(10);
 
           // Make the box follow the enemy
