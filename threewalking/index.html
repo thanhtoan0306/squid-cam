@@ -123,6 +123,17 @@
               }
             });
             scene.add(model);
+
+            // Log all available animation names in the GLB
+            if (gltf.animations && gltf.animations.length > 0) {
+              console.log('Available animations:');
+              gltf.animations.forEach((anim) => {
+                console.log(anim.name);
+              });
+            } else {
+              console.log('No animations found in this GLB.');
+            }
+
             createSimplePanel();
           },
           undefined,
