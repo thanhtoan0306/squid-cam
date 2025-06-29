@@ -209,7 +209,7 @@
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
         let cameraAngle = { azimuth: 0, polar: Math.PI / 6 }; // azimuth = horizontal, polar = vertical
-        const cameraRadius = 4;
+        let cameraRadius = 4; // <-- change from const to let
 
         const minPolar = 0.1;
         const maxPolar = Math.PI / 2 - 0.1;
@@ -251,6 +251,13 @@
         window.addEventListener('mousedown', onMouseDown);
         window.addEventListener('mouseup', onMouseUp);
         window.addEventListener('mousemove', onMouseMove);
+
+        // Add this after your mouse drag/orbit controls:
+        window.addEventListener('wheel', function (event) {
+          // Zoom in/out with mouse wheel
+          cameraRadius -= event.deltaY * 0.01;
+          cameraRadius = Math.max(2, Math.min(15, cameraRadius)); // Clamp zoom range
+        });
 
         // Replace updateCamera with orbit logic
         function updateCamera() {
