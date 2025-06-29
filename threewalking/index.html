@@ -48,6 +48,8 @@
 
     <!-- Three.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GLTFLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <!-- Stats.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/16/Stats.min.js"></script>
     <!-- dat.GUI CDN (alternative to lil-gui) -->
@@ -109,7 +111,26 @@
         scene.add(mesh);
 
         // Create a simple animated cube as placeholder since we can't load external models
-        createPlaceholderModel();
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          '../models/gltf/Xbot.glb',
+          function (gltf) {
+            model = gltf.scene;
+            model.traverse(function (child) {
+              if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+              }
+            });
+            scene.add(model);
+            createSimplePanel();
+          },
+          undefined,
+          function (error) {
+            console.error('An error happened loading the GLB:', error);
+            createPlaceholderModel(); // fallback
+          }
+        );
 
         renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(window.devicePixelRatio);
