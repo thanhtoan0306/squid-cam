@@ -134,7 +134,42 @@
               console.log('No animations found in this GLB.');
             }
 
-            createSimplePanel();
+            // Add: Setup animation mixer and controls
+            mixer = new THREE.AnimationMixer(model);
+            const availableAnimations = gltf.animations;
+            let currentAction = null;
+
+            function playAnimation(name) {
+              const clip = THREE.AnimationClip.findByName(
+                availableAnimations,
+                name
+              );
+              if (!clip) return;
+              if (currentAction) {
+                currentAction.stop();
+              }
+              currentAction = mixer.clipAction(clip);
+              currentAction.reset().play();
+            }
+
+            // Pass animation names to panel
+            createSimplePanel(
+              availableAnimations.map((a) => a.name),
+              playAnimation
+            );
+
+            // Animate mixer in render loop
+            // Add this to your animate() function:
+            // if (mixer) mixer.update(clock.getDelta());
+            const oldAnimate = animate;
+            animate = function () {
+              requestAnimationFrame(animate);
+              updateCamera();
+              if (mixer) mixer.update(clock.getDelta());
+              renderer.render(scene, camera);
+              stats.update();
+            };
+            animate();
           },
           undefined,
           function (error) {
@@ -259,7 +294,11 @@
         createSimplePanel();
       }
 
-      function createSimplePanel() {
+      // Update createSimplePanel to accept animation names and playAnimation callback
+      function createSimplePanel(
+        animationNames = [],
+        playAnimation = () => {}
+      ) {
         const gui = new dat.GUI({ width: 310 });
 
         const animationFolder = gui.addFolder('Animation Controls');
@@ -287,6 +326,12 @@
             }
           });
         animationFolder.add(controls, 'autoRotate').name('Auto Rotate');
+
+        // Add animation buttons
+        animationNames.forEach((name) => {
+          animationFolder.add({ [name]: () => playAnimation(name) }, name);
+        });
+
         settingsFolder.add(controls, 'resetPosition').name('Reset Position');
 
         animationFolder.open();
