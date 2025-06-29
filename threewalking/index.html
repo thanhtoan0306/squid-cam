@@ -194,23 +194,72 @@
         camera.position.set(-1, 2, 3);
 
         // Simple orbit controls (without external library)
-        let mouseX = 0,
-          mouseY = 0;
-        let targetX = 0,
-          targetY = 0;
+        // Remove these variables and event listener:
+        // let mouseX = 0,
+        //   mouseY = 0;
+        // let targetX = 0,
+        //   targetY = 0;
 
-        document.addEventListener('mousemove', (event) => {
-          mouseX = (event.clientX - window.innerWidth / 2) * 0.001;
-          mouseY = (event.clientY - window.innerHeight / 2) * 0.001;
-        });
+        // document.addEventListener('mousemove', (event) => {
+        //   mouseX = (event.clientX - window.innerWidth / 2) * 0.001;
+        //   mouseY = (event.clientY - window.innerHeight / 2) * 0.001;
+        // });
 
+        // Add camera orbit controls (click and drag)
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let cameraAngle = { azimuth: 0, polar: Math.PI / 6 }; // azimuth = horizontal, polar = vertical
+        const cameraRadius = 4;
+
+        const minPolar = 0.1;
+        const maxPolar = Math.PI / 2 - 0.1;
+
+        const canvas = renderer ? renderer.domElement : null;
+
+        function toCartesian(radius, azimuth, polar) {
+          return {
+            x: radius * Math.sin(polar) * Math.sin(azimuth),
+            y: radius * Math.cos(polar),
+            z: radius * Math.sin(polar) * Math.cos(azimuth),
+          };
+        }
+
+        function onMouseDown(e) {
+          isDragging = true;
+          previousMousePosition = { x: e.clientX, y: e.clientY };
+        }
+
+        function onMouseUp() {
+          isDragging = false;
+        }
+
+        function onMouseMove(e) {
+          if (!isDragging) return;
+          const deltaX = e.clientX - previousMousePosition.x;
+          const deltaY = e.clientY - previousMousePosition.y;
+
+          cameraAngle.azimuth -= deltaX * 0.01;
+          cameraAngle.polar -= deltaY * 0.01;
+          cameraAngle.polar = Math.max(
+            minPolar,
+            Math.min(maxPolar, cameraAngle.polar)
+          );
+
+          previousMousePosition = { x: e.clientX, y: e.clientY };
+        }
+
+        window.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mouseup', onMouseUp);
+        window.addEventListener('mousemove', onMouseMove);
+
+        // Replace updateCamera with orbit logic
         function updateCamera() {
-          targetX += (mouseX - targetX) * 0.05;
-          targetY += (mouseY - targetY) * 0.05;
-
-          camera.position.x = Math.cos(targetX) * 5;
-          camera.position.z = Math.sin(targetX) * 5;
-          camera.position.y = 2 + targetY;
+          const pos = toCartesian(
+            cameraRadius,
+            cameraAngle.azimuth,
+            cameraAngle.polar
+          );
+          camera.position.set(pos.x, pos.y + 1, pos.z); // +1 to keep model centered
           camera.lookAt(0, 1, 0);
         }
 
