@@ -50,6 +50,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <!-- FBXLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <!-- Stats.js CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stats.js/16/Stats.min.js"></script>
     <!-- dat.GUI CDN (alternative to lil-gui) -->
@@ -111,11 +113,12 @@
         scene.add(mesh);
 
         // Create a simple animated cube as placeholder since we can't load external models
-        const loader = new THREE.GLTFLoader();
+        const loader = new THREE.FBXLoader();
         loader.load(
-          '../models/gltf/Xbot.glb',
-          function (gltf) {
-            model = gltf.scene;
+          //   '../models/gltf/  girl-mrbeat.glb',
+          '../models/gltf/RumbaDancing.fbx', // <-- Change to your FBX file path
+          function (object) {
+            model = object;
             model.traverse(function (child) {
               if (child.isMesh) {
                 child.castShadow = true;
@@ -124,56 +127,16 @@
             });
             scene.add(model);
 
-            // Log all available animation names in the GLB
-            if (gltf.animations && gltf.animations.length > 0) {
-              console.log('Available animations:');
-              gltf.animations.forEach((anim) => {
-                console.log(anim.name);
-              });
-            } else {
-              console.log('No animations found in this GLB.');
+            // If your FBX has animations:
+            if (object.animations && object.animations.length > 0) {
+              mixer = new THREE.AnimationMixer(model);
+              const action = mixer.clipAction(object.animations[0]);
+              action.play();
             }
-
-            // Add: Setup animation mixer and controls
-            mixer = new THREE.AnimationMixer(model);
-            const availableAnimations = gltf.animations;
-            let currentAction = null;
-
-            function playAnimation(name) {
-              const clip = THREE.AnimationClip.findByName(
-                availableAnimations,
-                name
-              );
-              if (!clip) return;
-              if (currentAction) {
-                currentAction.stop();
-              }
-              currentAction = mixer.clipAction(clip);
-              currentAction.reset().play();
-            }
-
-            // Pass animation names to panel
-            createSimplePanel(
-              availableAnimations.map((a) => a.name),
-              playAnimation
-            );
-
-            // Animate mixer in render loop
-            // Add this to your animate() function:
-            // if (mixer) mixer.update(clock.getDelta());
-            const oldAnimate = animate;
-            animate = function () {
-              requestAnimationFrame(animate);
-              updateCamera();
-              if (mixer) mixer.update(clock.getDelta());
-              renderer.render(scene, camera);
-              stats.update();
-            };
-            animate();
           },
           undefined,
           function (error) {
-            console.error('An error happened loading the GLB:', error);
+            console.error('An error happened loading the FBX:', error);
             createPlaceholderModel(); // fallback
           }
         );

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js FBX Loader</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="info">
+        <h3>Three.js FBX Loader</h3>
+        <p>WASD: Di chuyển camera</p>
+        <p>Chuột: Xoay camera</p>
+        <p>Scroll: Zoom</p>
+    </div>
+    
+    <div id="loading">Đang tải model...</div>
+    
+    <div id="controls">
+        <button onclick="loadModel('RumbaDancing.fbx')">Load Rumba Dancing</button>
+        <button onclick="loadModel('suthanhhoa.fbx')">Load Suthanhhoa</button>
+        <button onclick="toggleAnimation()">Play/Pause Animation</button>
+        <button onclick="resetCamera()">Reset Camera</button>
+    </div>
+
+    <!-- Three.js và các thư viện cần thiết -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fflate.min.js"></script>
+
+    <script>
+        // Biến toàn cục
+        let scene, camera, renderer, controls;
+        let mixer, clock;
+        let currentModel = null;
+        let isAnimating = true;
+
+        // Khởi tạo scene
+        function init() {
+            // Tạo scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            // Tạo camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+
+            // Tạo renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Tạo controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Tạo lighting
+            setupLighting();
+
+            // Tạo grid helper
+            const gridHelper = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
+            scene.add(gridHelper);
+
+            // Tạo axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+
+            // Khởi tạo clock cho animation
+            clock = new THREE.Clock();
+
+            // Load model mặc định
+            loadModel('RumbaDancing.fbx');
+
+            // Bắt đầu render loop
+            animate();
+
+            // Xử lý resize window
+            window.addEventListener('resize', onWindowResize, false);
+        }
+
+        // Thiết lập lighting
+        function setupLighting() {
+            // Ambient light
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            // Directional light (mặt trời)
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            // Point light
+            const pointLight = new THREE.PointLight(0xffffff, 0.5, 100);
+            pointLight.position.set(-10, 10, -10);
+            scene.add(pointLight);
+        }
+
+        // Load model FBX
+        function loadModel(filename) {
+            // Xóa model cũ nếu có
+            if (currentModel) {
+                scene.remove(currentModel);
+                currentModel = null;
+            }
+
+            // Hiển thị loading
+            document.getElementById('loading').style.display = 'block';
+
+            // Tạo FBX loader
+            const loader = new THREE.FBXLoader();
+            
+            // Đường dẫn đến file FBX
+            const modelPath = `../models/gltf/${filename}`;
+            
+            loader.load(
+                modelPath,
+                function (object) {
+                    // Ẩn loading
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // Thiết lập model
+                    object.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    // Scale model nếu cần
+                    object.scale.setScalar(0.01);
+
+                    // Center model
+                    const box = new THREE.Box3().setFromObject(object);
+                    const center = box.getCenter(new THREE.Vector3());
+                    object.position.sub(center);
+
+                    // Thiết lập animation mixer
+                    if (object.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(object);
+                        const action = mixer.clipAction(object.animations[0]);
+                        action.play();
+                    }
+
+                    // Thêm model vào scene
+                    scene.add(object);
+                    currentModel = object;
+
+                    // Điều chỉnh camera để nhìn thấy toàn bộ model
+                    const box2 = new THREE.Box3().setFromObject(object);
+                    const size = box2.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                    cameraZ *= 1.5; // Thêm khoảng cách
+                    camera.position.set(0, cameraZ * 0.5, cameraZ);
+                    camera.lookAt(0, 0, 0);
+                    controls.update();
+
+                    console.log('Model loaded successfully:', filename);
+                },
+                function (xhr) {
+                    // Progress callback
+                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                    document.getElementById('loading').textContent = `Đang tải: ${percent}%`;
+                },
+                function (error) {
+                    // Error callback
+                    document.getElementById('loading').style.display = 'none';
+                    console.error('Error loading model:', error);
+                    alert('Lỗi khi tải model: ' + error.message);
+                }
+            );
+        }
+
+        // Toggle animation
+        function toggleAnimation() {
+            if (mixer) {
+                if (isAnimating) {
+                    mixer.stopAllAction();
+                } else {
+                    mixer.clipAction(currentModel.animations[0]).play();
+                }
+                isAnimating = !isAnimating;
+            }
+        }
+
+        // Reset camera
+        function resetCamera() {
+            camera.position.set(0, 5, 10);
+            camera.lookAt(0, 0, 0);
+            controls.reset();
+        }
+
+        // Xử lý resize window
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update controls
+            controls.update();
+
+            // Update animation mixer
+            if (mixer && isAnimating) {
+                const delta = clock.getDelta();
+                mixer.update(delta);
+            }
+
+            // Render scene
+            renderer.render(scene, camera);
+        }
+
+        // Khởi tạo khi trang load xong
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
