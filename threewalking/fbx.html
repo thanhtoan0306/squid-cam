@@ -80,6 +80,8 @@
     <div id="controls">
         <button onclick="loadModel('RumbaDancing.fbx')">Load Rumba Dancing</button>
         <button onclick="loadModel('suthanhhoa.fbx')">Load Suthanhhoa</button>
+        <button onclick="loadRumbaWithSuthanhhoaAnimation()">Rumba play suthanhhoa</button>
+        <button onclick="loadRumbaOriginal()">Rumba Original Animation</button>
         <button onclick="toggleAnimation()">Play/Pause Animation</button>
         <button onclick="resetCamera()">Reset Camera</button>
     </div>
@@ -134,7 +136,7 @@
             clock = new THREE.Clock();
 
             // Load model mặc định
-            loadModel('RumbaDancing.fbx');
+            loadModel('suthanhhoa.fbx');
 
             // Bắt đầu render loop
             animate();
@@ -250,6 +252,186 @@
                 }
                 isAnimating = !isAnimating;
             }
+        }
+
+        // Load Rumba model với animation của suthanhhoa
+        function loadRumbaWithSuthanhhoaAnimation() {
+            // Xóa model cũ nếu có
+            if (currentModel) {
+                scene.remove(currentModel);
+                currentModel = null;
+            }
+
+            // Hiển thị loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').textContent = 'Đang tải Rumba model...';
+
+            // Load Rumba model trước
+            const rumbaLoader = new THREE.FBXLoader();
+            rumbaLoader.load(
+                '../models/gltf/RumbaDancing.fbx',
+                function (rumbaObject) {
+                    // Sau khi load Rumba xong, load animation từ suthanhhoa
+                    document.getElementById('loading').textContent = 'Đang tải animation...';
+                    
+                    const suthanhhoaLoader = new THREE.FBXLoader();
+                    suthanhhoaLoader.load(
+                        '../models/gltf/suthanhhoa.fbx',
+                        function (suthanhhoaObject) {
+                            // Ẩn loading
+                            document.getElementById('loading').style.display = 'none';
+                            
+                            // Thiết lập Rumba model
+                            rumbaObject.traverse(function (child) {
+                                if (child.isMesh) {
+                                    child.castShadow = true;
+                                    child.receiveShadow = true;
+                                }
+                            });
+
+                            // Scale model
+                            rumbaObject.scale.setScalar(0.01);
+
+                            // Center model
+                            const box = new THREE.Box3().setFromObject(rumbaObject);
+                            const center = box.getCenter(new THREE.Vector3());
+                            rumbaObject.position.sub(center);
+
+                            // Thử áp dụng animation từ suthanhhoa vào Rumba
+                            if (suthanhhoaObject.animations.length > 0) {
+                                // Tạo mixer mới
+                                mixer = new THREE.AnimationMixer(rumbaObject);
+                                
+                                // Thử tìm skeleton phù hợp
+                                let animationClip = suthanhhoaObject.animations[0];
+                                
+                                // Tạo action và thiết lập
+                                const action = mixer.clipAction(animationClip, rumbaObject);
+                                action.setLoop(THREE.LoopRepeat);
+                                action.clampWhenFinished = false;
+                                action.play();
+                                
+                                console.log('Animation applied:', animationClip.name);
+                                console.log('Animation duration:', animationClip.duration);
+                                console.log('Animation tracks:', animationClip.tracks.length);
+                            } else {
+                                console.log('Không có animation trong suthanhhoa model');
+                            }
+
+                            // Thêm Rumba model vào scene
+                            scene.add(rumbaObject);
+                            currentModel = rumbaObject;
+
+                            // Điều chỉnh camera
+                            const box2 = new THREE.Box3().setFromObject(rumbaObject);
+                            const size = box2.getSize(new THREE.Vector3());
+                            const maxDim = Math.max(size.x, size.y, size.z);
+                            const fov = camera.fov * (Math.PI / 180);
+                            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                            cameraZ *= 1.5;
+                            camera.position.set(0, cameraZ * 0.5, cameraZ);
+                            camera.lookAt(0, 0, 0);
+                            controls.update();
+
+                            console.log('Rumba model với suthanhhoa animation loaded successfully');
+                        },
+                        function (xhr) {
+                            const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                            document.getElementById('loading').textContent = `Đang tải animation: ${percent}%`;
+                        },
+                        function (error) {
+                            document.getElementById('loading').style.display = 'none';
+                            console.error('Error loading suthanhhoa animation:', error);
+                            alert('Lỗi khi tải animation: ' + error.message);
+                        }
+                    );
+                },
+                function (xhr) {
+                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                    document.getElementById('loading').textContent = `Đang tải Rumba model: ${percent}%`;
+                },
+                function (error) {
+                    document.getElementById('loading').style.display = 'none';
+                    console.error('Error loading Rumba model:', error);
+                    alert('Lỗi khi tải Rumba model: ' + error.message);
+                }
+            );
+        }
+
+        // Load Rumba với animation gốc
+        function loadRumbaOriginal() {
+            // Xóa model cũ nếu có
+            if (currentModel) {
+                scene.remove(currentModel);
+                currentModel = null;
+            }
+
+            // Hiển thị loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('loading').textContent = 'Đang tải Rumba model...';
+
+            const rumbaLoader = new THREE.FBXLoader();
+            rumbaLoader.load(
+                '../models/gltf/RumbaDancing.fbx',
+                function (rumbaObject) {
+                    // Ẩn loading
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // Thiết lập Rumba model
+                    rumbaObject.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    // Scale model
+                    rumbaObject.scale.setScalar(0.01);
+
+                    // Center model
+                    const box = new THREE.Box3().setFromObject(rumbaObject);
+                    const center = box.getCenter(new THREE.Vector3());
+                    rumbaObject.position.sub(center);
+
+                    // Sử dụng animation gốc của Rumba
+                    if (rumbaObject.animations.length > 0) {
+                        mixer = new THREE.AnimationMixer(rumbaObject);
+                        const action = mixer.clipAction(rumbaObject.animations[0]);
+                        action.setLoop(THREE.LoopRepeat);
+                        action.play();
+                        
+                        console.log('Rumba original animation applied:', rumbaObject.animations[0].name);
+                    } else {
+                        console.log('Không có animation trong Rumba model');
+                    }
+
+                    // Thêm Rumba model vào scene
+                    scene.add(rumbaObject);
+                    currentModel = rumbaObject;
+
+                    // Điều chỉnh camera
+                    const box2 = new THREE.Box3().setFromObject(rumbaObject);
+                    const size = box2.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const fov = camera.fov * (Math.PI / 180);
+                    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                    cameraZ *= 1.5;
+                    camera.position.set(0, cameraZ * 0.5, cameraZ);
+                    camera.lookAt(0, 0, 0);
+                    controls.update();
+
+                    console.log('Rumba model với animation gốc loaded successfully');
+                },
+                function (xhr) {
+                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                    document.getElementById('loading').textContent = `Đang tải Rumba model: ${percent}%`;
+                },
+                function (error) {
+                    document.getElementById('loading').style.display = 'none';
+                    console.error('Error loading Rumba model:', error);
+                    alert('Lỗi khi tải Rumba model: ' + error.message);
+                }
+            );
         }
 
         // Reset camera

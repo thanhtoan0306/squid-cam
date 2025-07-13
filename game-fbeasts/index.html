@@ -276,55 +276,54 @@
           this.player.anims.play('gz_idle'); // Play idle by default
 
           // Create the yellow card (hidden by default)
-          this.yellowCard = this.add.rectangle(
+          // --- Thay thế đoạn này bằng container ---
+          this.yellowCardContainer = this.add.container(
             this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2,
-            200, // width
-            300, // height
-            0xffff00
+            this.sys.game.config.height / 2
           );
-          this.yellowCard.setStrokeStyle(4, 0x000000); // Optional: black border
-          this.yellowCard.setVisible(false);
+
+          this.yellowCard = this.add.rectangle(0, 0, 200, 300, 0xffff00);
+          this.yellowCard.setStrokeStyle(4, 0x000000);
+
+          this.yellowCardAvatar = this.add.image(0, -30, 'avatarGojo');
+          this.yellowCardAvatar.setDisplaySize(100, 100);
+
+          this.yellowCardContainer.add([this.yellowCard, this.yellowCardAvatar]);
+          this.yellowCardContainer.setVisible(false);
 
           // Show yellow card for 3 seconds when 'C' is pressed
           this.input.keyboard.on('keydown-C', () => {
-            // Reset card state
-            this.yellowCard.setVisible(true);
-            this.yellowCard.setAlpha(0);
-            this.yellowCard.setScale(0.5, 0.5);
-            this.yellowCard.setAngle(0);
-            this.yellowCard.scaleX = 0.5;
+            this.yellowCardContainer.setVisible(true);
+            this.yellowCardContainer.setAlpha(0);
+            this.yellowCardContainer.setScale(0.5, 0.5);
 
-            // Easing in: fade and scale up
             this.tweens.add({
-              targets: this.yellowCard,
+              targets: this.yellowCardContainer,
               alpha: 1,
               scaleX: 1,
               scaleY: 1,
               ease: 'Back.Out',
               duration: 400,
               onComplete: () => {
-                // Wait 2.2s, then spin Y axis (simulate with scaleX flip)
                 this.time.delayedCall(2200, () => {
                   this.tweens.add({
-                    targets: this.yellowCard,
+                    targets: this.yellowCardContainer,
                     scaleX: -1,
                     ease: 'Cubic.InOut',
                     duration: 400,
                     yoyo: true,
                     onYoyo: () => {
-                      // After spin, ease out (fade and scale down)
                       this.tweens.add({
-                        targets: this.yellowCard,
+                        targets: this.yellowCardContainer,
                         alpha: 0,
                         scaleX: 0.5,
                         scaleY: 0.5,
                         ease: 'Back.In',
                         duration: 400,
                         onComplete: () => {
-                          this.yellowCard.setVisible(false);
-                          this.yellowCard.setScale(1, 1);
-                          this.yellowCard.scaleX = 1;
+                          this.yellowCardContainer.setVisible(false);
+                          this.yellowCardContainer.setScale(1, 1);
+                          this.yellowCardContainer.scaleX = 1;
                         },
                       });
                     },
