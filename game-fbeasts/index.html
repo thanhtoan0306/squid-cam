@@ -95,6 +95,7 @@
               `assets/boss2/${frameNum}.png`
             );
           }
+          this.load.image('roseIcon', 'assets/tiktokgifticon/rose.webp');
         }
 
         create() {
@@ -353,7 +354,11 @@
           */
 
           // --- Mặt sau ---
-          this.backRect = this.add.rectangle(0, 0, 400, 600, 0x000000);
+          // Viền nâu đậm
+          this.backBorder = this.add.rectangle(0, 0, 400, 600, 0x6B3F19); // nâu đậm
+          this.cardContainer.add(this.backBorder);
+          // Nền nâu nhạt
+          this.backRect = this.add.rectangle(0, 0, 380, 580, 0xC9B29B); // nâu nhạt
           this.cardContainer.add(this.backRect);
           this.cardBackIcon = this.add.image(0, 0, 'roseIcon');
           this.cardBackIcon.setDisplaySize(120, 120);
