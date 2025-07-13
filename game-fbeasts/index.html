@@ -276,20 +276,96 @@
 
           this.player.anims.play('gz_idle'); // Play idle by default
 
-          // --- Yu-Gi-Oh! style card ---
+          // --- Mặt trước ---
+          // Đầu tiên phải tạo container trước khi add bất kỳ thành phần nào
           this.cardContainer = this.add.container(
             this.sys.game.config.width / 2,
             this.sys.game.config.height / 2 - 50
           );
+          // nameText
+          // Hàm cắt text và thêm ... nếu quá dài
+          function truncateTextToWidth(scene, text, maxWidth, style) {
+            let tempText = scene.add.text(0, 0, text, style).setVisible(false);
+            let truncated = text;
+            while (tempText.width > maxWidth && truncated.length > 0) {
+              truncated = truncated.slice(0, -1);
+              tempText.setText(truncated + '...');
+            }
+            tempText.destroy();
+            return truncated.length < text.length ? truncated + '...' : text;
+          }
 
+          const nameRaw = '🦁 Just A Clone 🇺🇸🤖';
+          const nameStyle = {
+            fontFamily: 'Arial',
+            fontSize: '28px',
+            color: '#ffe066',
+            fontStyle: 'bold',
+            align: 'center',
+            stroke: '#000',
+            strokeThickness: 4,
+          };
+          const paddingLeft = 20;
+          const nameMaxWidth = 370 - paddingLeft;
+          const nameTextStr = truncateTextToWidth(
+            this,
+            nameRaw,
+            nameMaxWidth,
+            nameStyle
+          );
+          const nameText = this.add.text(0, -270, nameTextStr, nameStyle);
+          nameText.setOrigin(0.5, 0.5);
+          this.cardContainer.add(nameText);
+
+          // Khung ảnh minh họa
+          const artBorder = this.add.rectangle(
+            0,
+            artBorderY,
+            360,
+            360,
+            0xffd700
+          );
+          this.cardContainer.add(artBorder);
+          const artBg = this.add.rectangle(0, artBorderY, 340, 340, 0x000000);
+          this.cardContainer.add(artBg);
+          // Ảnh minh họa (avatarGojo)
+          const artImg = this.add
+            .image(0, artBorderY, 'avatarGojo')
+            .setDisplaySize(340, 340);
+          this.cardContainer.add(artImg);
+
+          // Khung mô tả
+          const descBg = this.add.rectangle(
+            0,
+            descBgY,
+            360,
+            descBgHeight,
+            0xffffff
+          );
+          this.cardContainer.add(descBg);
+          const descText = this.add.text(
+            0,
+            descBgY - 30,
+            '💙my🏠@Ryy 🦁🇻🇳🧡~acc phu👉🏻@ndt2followbyryy ~thanks for like & follow 🙆‍♂️',
+            {
+              fontFamily: 'serif',
+              fontSize: '22px',
+              color: '#000',
+              wordWrap: { width: 340 },
+            }
+          );
+          descText.setOrigin(0.5, 0);
+          this.cardContainer.add(descText);
+
+          // --- Mặt sau ---
           // Viền nâu đậm ngoài cùng
-          this.outerBorder = this.add.rectangle(0, 0, 420, 620, 0x6B3F19); // nâu đậm
+          this.outerBorder = this.add.rectangle(0, 0, 420, 620, 0x6b3f19); // nâu đậm
           this.cardContainer.addAt(this.outerBorder, 0); // Đảm bảo nằm dưới cùng
           // Viền nâu đậm bên trong
-          this.backBorder = this.add.rectangle(0, 0, 400, 600, 0x6B3F19); // nâu đậm
+          this.backBorder = this.add.rectangle(0, 0, 400, 600, 0x6b3f19); // nâu đậm
           this.cardContainer.add(this.backBorder);
           // Nền nâu nhạt
-          this.backRect = this.add.rectangle(0, 0, 380, 580, 0xC9B29B); // nâu nhạt
+          this.backRect = this.add.rectangle(0, 0, 380, 580, 0xc9b29b); // nâu nhạt
           this.cardContainer.add(this.backRect);
           this.cardBackIcon = this.add.image(0, 0, 'roseIcon');
           this.cardBackIcon.setDisplaySize(120, 120);
@@ -298,57 +374,83 @@
           this.cardContainer.setVisible(false);
           this.cardContainer.setDepth(1000);
 
-          // Hiển thị card ngay khi load scene, không cần tween hiệu ứng
-          this.isCardFreeze = true;
-          this.cardContainer.setPosition(
-            this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2 - 50
-          );
-          this.cardContainer.setVisible(true);
-          this.cardContainer.setAlpha(1);
-          this.cardContainer.setScale(1, 1);
-          // Không chạy tween, card giữ nguyên trên màn hình
-
-          /*
-          // --- Tween hiệu ứng xuất hiện/ẩn card (bỏ comment để dùng lại) ---
-          this.cardContainer.setAlpha(0);
-          this.cardContainer.setScale(0.5, 0.5);
-          this.tweens.add({
-            targets: this.cardContainer,
-            alpha: 1,
-            scaleX: 1,
-            scaleY: 1,
-            ease: 'Back.Out',
-            duration: 400,
-            onComplete: () => {
-              this.time.delayedCall(2200, () => {
-                this.tweens.add({
-                  targets: this.cardContainer,
-                  scaleX: -1,
-                  ease: 'Cubic.InOut',
-                  duration: 400,
-                  yoyo: true,
-                  onYoyo: () => {
-                    this.tweens.add({
-                      targets: this.cardContainer,
-                      alpha: 0,
-                      scaleX: 0.5,
-                      scaleY: 0.5,
-                      ease: 'Back.In',
-                      duration: 400,
-                      onComplete: () => {
-                        this.cardContainer.setVisible(false);
-                        this.cardContainer.setScale(1, 1);
-                        this.cardContainer.scaleX = 1;
+          // Hiển thị card khi nhấn phím C, có tween lật card và hiệu ứng mặt sau
+          this.input.keyboard.on('keydown-C', () => {
+            this.isCardFreeze = true;
+            this.cardContainer.setPosition(
+              this.sys.game.config.width / 2,
+              this.sys.game.config.height / 2 - 50
+            );
+            this.cardContainer.setVisible(true);
+            this.cardContainer.setAlpha(0);
+            this.cardContainer.setScale(0.5, 0.5);
+            this.tweens.add({
+              targets: this.cardContainer,
+              alpha: 1,
+              scaleX: 1,
+              scaleY: 1,
+              ease: 'Back.Out',
+              duration: 400,
+              onComplete: () => {
+                this.time.delayedCall(2200, () => {
+                  this.tweens.add({
+                    targets: this.cardContainer,
+                    scaleX: -1,
+                    ease: 'Cubic.InOut',
+                    duration: 400,
+                    yoyo: true,
+                    onUpdate: () => {
+                      if (this.cardContainer.scaleX < 0) {
+                        this.backRect.setVisible(true);
+                        this.cardBackIcon.setVisible(true);
+                        this.isCardFreeze = true;
+                        nameText.setVisible(false);
+                        artBorder.setVisible(false);
+                        artBg.setVisible(false);
+                        artImg.setVisible(false);
+                        descBg.setVisible(false);
+                        descText.setVisible(false);
+                      } else {
+                        this.backRect.setVisible(false);
+                        this.cardBackIcon.setVisible(false);
                         this.isCardFreeze = false;
-                      },
-                    });
-                  },
+                        nameText.setVisible(true);
+                        artBorder.setVisible(true);
+                        artBg.setVisible(true);
+                        artImg.setVisible(true);
+                        descBg.setVisible(true);
+                        descText.setVisible(true);
+                      }
+                    },
+                    onYoyo: () => {
+                      this.tweens.add({
+                        targets: this.cardContainer,
+                        alpha: 0,
+                        scaleX: 0.5,
+                        scaleY: 0.5,
+                        ease: 'Back.In',
+                        duration: 400,
+                        onComplete: () => {
+                          this.cardContainer.setVisible(false);
+                          this.cardContainer.setScale(1, 1);
+                          this.cardContainer.scaleX = 1;
+                          this.isCardFreeze = false;
+                          this.backRect.setVisible(false);
+                          this.cardBackIcon.setVisible(false);
+                          nameText.setVisible(true);
+                          artBorder.setVisible(true);
+                          artBg.setVisible(true);
+                          artImg.setVisible(true);
+                          descBg.setVisible(true);
+                          descText.setVisible(true);
+                        },
+                      });
+                    },
+                  });
                 });
-              });
-            },
+              },
+            });
           });
-          */
         }
 
         update() {
