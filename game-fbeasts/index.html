@@ -290,6 +290,7 @@
 
           this.yellowCardContainer.add([this.yellowCard, this.yellowCardAvatar]);
           this.yellowCardContainer.setVisible(false);
+          this.yellowCardContainer.setDepth(1000); // Đảm bảo luôn trên cùng
 
           // Show yellow card for 3 seconds when 'C' is pressed
           this.input.keyboard.on('keydown-C', () => {
