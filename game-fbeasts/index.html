@@ -289,8 +289,20 @@
           const inner = this.add.rectangle(0, 0, 400, 600, 0x222222);
           this.cardContainer.add(inner);
 
-          // Tên bài
-          const nameText = this.add.text(0, -270, 'STAR-VADER, CHAOS BREAKER CRISIS', {
+          // Hàm cắt text và thêm ... nếu quá dài
+          function truncateTextToWidth(scene, text, maxWidth, style) {
+            let tempText = scene.add.text(0, 0, text, style).setVisible(false);
+            let truncated = text;
+            while (tempText.width > maxWidth && truncated.length > 0) {
+              truncated = truncated.slice(0, -1);
+              tempText.setText(truncated + '...');
+            }
+            tempText.destroy();
+            return (truncated.length < text.length) ? truncated + '...' : text;
+          }
+
+          const nameRaw = 'STAR-VADER, CHAOS BREAKER CRISIS';
+          const nameStyle = {
             fontFamily: 'serif',
             fontSize: '28px',
             color: '#ffe066',
@@ -298,14 +310,13 @@
             align: 'center',
             stroke: '#000',
             strokeThickness: 4,
-            wordWrap: { width: 380 }
-          });
-          nameText.setOrigin(0.5, 0.5);
+          };
+          const paddingLeft = 20;
+          const nameMaxWidth = 370 - paddingLeft; // Không cần trừ icon nữa
+          const nameTextStr = truncateTextToWidth(this, nameRaw, nameMaxWidth, nameStyle);
+          const nameText = this.add.text(-200 + paddingLeft, -270, nameTextStr, nameStyle);
+          nameText.setOrigin(0, 0.5);
           this.cardContainer.add(nameText);
-
-          // Icon thuộc tính (dùng avatarGojo tạm nếu chưa có icon)
-          const attrIcon = this.add.image(170, -270, 'avatarGojo').setDisplaySize(40, 40);
-          this.cardContainer.add(attrIcon);
 
           // Khung ảnh minh họa
           const artBorder = this.add.rectangle(0, -40, 360, 260, 0xFFD700);
@@ -319,7 +330,7 @@
           // Khung mô tả
           const descBg = this.add.rectangle(0, 180, 360, 120, 0xffffff);
           this.cardContainer.add(descBg);
-          const descText = this.add.text(0, 150, '[DRAGON/XYZ/EFFECT]\n3 level 8 monsters\nOnce per turn, during either player\'s turn, when a Spell Card or effect is activated on the field: You can negate that effect, and if you do, attach that card to this card as Xyz Material, and if you do, banish 1 card from your opponent\'s hand or field. You can detach 1 Xyz Material from this card, then target 1 monster your opponent controls; its ATK becomes half its current ATK, and if it does, this card gains that lost ATK. These changes last until the End Phase.', {
+          const descText = this.add.text(0, 150, 'Bio user', {
             fontFamily: 'serif',
             fontSize: '16px',
             color: '#000',
