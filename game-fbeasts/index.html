@@ -293,6 +293,11 @@
 
           // Show yellow card for 3 seconds when 'C' is pressed
           this.input.keyboard.on('keydown-C', () => {
+            // Đặt vị trí giữa màn hình, lệch lên trên 50px
+            this.yellowCardContainer.setPosition(
+              this.sys.game.config.width / 2,
+              this.sys.game.config.height / 2 - 50
+            );
             this.yellowCardContainer.setVisible(true);
             this.yellowCardContainer.setAlpha(0);
             this.yellowCardContainer.setScale(0.5, 0.5);
