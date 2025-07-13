@@ -282,11 +282,11 @@
             this.sys.game.config.height / 2
           );
 
-          this.yellowCard = this.add.rectangle(0, 0, 200, 300, 0xffff00);
+          this.yellowCard = this.add.rectangle(0, 0, 400, 600, 0xffff00); // Gấp đôi 200x300
           this.yellowCard.setStrokeStyle(4, 0x000000);
 
-          this.yellowCardAvatar = this.add.image(0, -30, 'avatarGojo');
-          this.yellowCardAvatar.setDisplaySize(100, 100);
+          this.yellowCardAvatar = this.add.image(0, -60, 'avatarGojo'); // Dịch lên gấp đôi
+          this.yellowCardAvatar.setDisplaySize(200, 200); // Gấp đôi 100x100
 
           this.yellowCardContainer.add([this.yellowCard, this.yellowCardAvatar]);
           this.yellowCardContainer.setVisible(false);
