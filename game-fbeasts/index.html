@@ -301,9 +301,9 @@
             return (truncated.length < text.length) ? truncated + '...' : text;
           }
 
-          const nameRaw = 'STAR-VADER, CHAOS BREAKER CRISIS';
+          const nameRaw = '🦁 Just A Clone 🇺🇸🤖';
           const nameStyle = {
-            fontFamily: 'serif',
+            fontFamily: 'Arial',
             fontSize: '28px',
             color: '#ffe066',
             fontStyle: 'bold',
@@ -330,24 +330,14 @@
           // Khung mô tả
           const descBg = this.add.rectangle(0, 180, 360, 120, 0xffffff);
           this.cardContainer.add(descBg);
-          const descText = this.add.text(0, 150, 'Bio user', {
+          const descText = this.add.text(0, 150, '💙my🏠@Ryy 🦁🇻🇳🧡~acc phu👉🏻@ndt2followbyryy ~thanks for like & follow 🙆‍♂️', {
             fontFamily: 'serif',
-            fontSize: '16px',
+            fontSize: '22px',
             color: '#000',
             wordWrap: { width: 340 }
           });
           descText.setOrigin(0.5, 0);
           this.cardContainer.add(descText);
-
-          // ATK/DEF
-          const statText = this.add.text(120, 230, 'ATK/3000 DEF/3000', {
-            fontFamily: 'serif',
-            fontSize: '18px',
-            color: '#000',
-            fontStyle: 'bold',
-          });
-          statText.setOrigin(0.5, 0.5);
-          this.cardContainer.add(statText);
 
           this.cardContainer.setVisible(false);
           this.cardContainer.setDepth(1000);
