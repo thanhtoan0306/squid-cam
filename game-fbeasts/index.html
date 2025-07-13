@@ -297,6 +297,10 @@
             this.yellowCardContainer.setAlpha(0);
             this.yellowCardContainer.setScale(0.5, 0.5);
 
+            // Đảm bảo mặt trước ban đầu
+            this.yellowCard.fillColor = 0xffff00;
+            this.yellowCardAvatar.setVisible(true);
+
             this.tweens.add({
               targets: this.yellowCardContainer,
               alpha: 1,
@@ -312,7 +316,18 @@
                     ease: 'Cubic.InOut',
                     duration: 400,
                     yoyo: true,
+                    onUpdate: () => {
+                      if (this.yellowCardContainer.scaleX < 0) {
+                        this.yellowCard.fillColor = 0xff0000; // Đỏ
+                        this.yellowCardAvatar.setVisible(false);
+                      } else {
+                        this.yellowCard.fillColor = 0xffff00; // Vàng
+                        this.yellowCardAvatar.setVisible(true);
+                      }
+                    },
                     onYoyo: () => {
+                      this.yellowCard.fillColor = 0xffff00;
+                      this.yellowCardAvatar.setVisible(true);
                       this.tweens.add({
                         targets: this.yellowCardContainer,
                         alpha: 0,
