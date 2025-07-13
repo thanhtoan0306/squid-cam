@@ -320,18 +320,26 @@
           this.cardContainer.add(nameText);
 
           // Khung ảnh minh họa
-          const artBorder = this.add.rectangle(0, -40, 360, 360, 0xFFD700);
+          const artBorderY = -40;
+          const artBorderHeight = 360;
+          const descBgHeight = 120;
+          const spacing = 30; // Khoảng cách mong muốn
+
+          const artBorderBottom = artBorderY + artBorderHeight / 2; // 140
+          const descBgY = artBorderBottom + descBgHeight / 2 + spacing; // 140 + 60 + 30 = 230
+
+          const artBorder = this.add.rectangle(0, artBorderY, 360, 360, 0xFFD700);
           this.cardContainer.add(artBorder);
-          const artBg = this.add.rectangle(0, -40, 340, 340, 0x000000);
+          const artBg = this.add.rectangle(0, artBorderY, 340, 340, 0x000000);
           this.cardContainer.add(artBg);
           // Ảnh minh họa (avatarGojo)
-          const artImg = this.add.image(0, -40, 'avatarGojo').setDisplaySize(340, 340);
+          const artImg = this.add.image(0, artBorderY, 'avatarGojo').setDisplaySize(340, 340);
           this.cardContainer.add(artImg);
 
-          // Khung mô tả
-          const descBg = this.add.rectangle(0, 180, 360, 120, 0xffffff);
+          // Khung mô tả cách artBorder spacing px phía dưới
+          const descBg = this.add.rectangle(0, descBgY, 360, descBgHeight, 0xffffff);
           this.cardContainer.add(descBg);
-          const descText = this.add.text(0, 150, '💙my🏠@Ryy 🦁🇻🇳🧡~acc phu👉🏻@ndt2followbyryy ~thanks for like & follow 🙆‍♂️', {
+          const descText = this.add.text(0, descBgY - 30, '💙my🏠@Ryy 🦁🇻🇳🧡~acc phu👉🏻@ndt2followbyryy ~thanks for like & follow 🙆‍♂️', {
             fontFamily: 'serif',
             fontSize: '22px',
             color: '#000',
