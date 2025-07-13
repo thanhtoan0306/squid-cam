@@ -275,40 +275,83 @@
 
           this.player.anims.play('gz_idle'); // Play idle by default
 
-          // Create the yellow card (hidden by default)
-          // --- Thay thế đoạn này bằng container ---
-          this.yellowCardContainer = this.add.container(
+          // --- Yu-Gi-Oh! style card ---
+          this.cardContainer = this.add.container(
             this.sys.game.config.width / 2,
-            this.sys.game.config.height / 2
+            this.sys.game.config.height / 2 - 50
           );
 
-          this.yellowCard = this.add.rectangle(0, 0, 400, 600, 0xffff00); // Gấp đôi 200x300
-          this.yellowCard.setStrokeStyle(4, 0x000000);
+          // Viền vàng ngoài
+          const border = this.add.rectangle(0, 0, 420, 620, 0xFFD700);
+          this.cardContainer.add(border);
 
-          this.yellowCardAvatar = this.add.image(0, -60, 'avatarGojo'); // Dịch lên gấp đôi
-          this.yellowCardAvatar.setDisplaySize(200, 200); // Gấp đôi 100x100
+          // Nền đen bên trong
+          const inner = this.add.rectangle(0, 0, 400, 600, 0x222222);
+          this.cardContainer.add(inner);
 
-          this.yellowCardContainer.add([this.yellowCard, this.yellowCardAvatar]);
-          this.yellowCardContainer.setVisible(false);
-          this.yellowCardContainer.setDepth(1000); // Đảm bảo luôn trên cùng
+          // Tên bài
+          const nameText = this.add.text(0, -270, 'STAR-VADER, CHAOS BREAKER CRISIS', {
+            fontFamily: 'serif',
+            fontSize: '28px',
+            color: '#ffe066',
+            fontStyle: 'bold',
+            align: 'center',
+            stroke: '#000',
+            strokeThickness: 4,
+            wordWrap: { width: 380 }
+          });
+          nameText.setOrigin(0.5, 0.5);
+          this.cardContainer.add(nameText);
 
-          // Show yellow card for 3 seconds when 'C' is pressed
+          // Icon thuộc tính (dùng avatarGojo tạm nếu chưa có icon)
+          const attrIcon = this.add.image(170, -270, 'avatarGojo').setDisplaySize(40, 40);
+          this.cardContainer.add(attrIcon);
+
+          // Khung ảnh minh họa
+          const artBorder = this.add.rectangle(0, -40, 360, 260, 0xFFD700);
+          this.cardContainer.add(artBorder);
+          const artBg = this.add.rectangle(0, -40, 340, 240, 0x000000);
+          this.cardContainer.add(artBg);
+          // Ảnh minh họa (avatarGojo)
+          const artImg = this.add.image(0, -40, 'avatarGojo').setDisplaySize(320, 220);
+          this.cardContainer.add(artImg);
+
+          // Khung mô tả
+          const descBg = this.add.rectangle(0, 180, 360, 120, 0xffffff);
+          this.cardContainer.add(descBg);
+          const descText = this.add.text(0, 150, '[DRAGON/XYZ/EFFECT]\n3 level 8 monsters\nOnce per turn, during either player\'s turn, when a Spell Card or effect is activated on the field: You can negate that effect, and if you do, attach that card to this card as Xyz Material, and if you do, banish 1 card from your opponent\'s hand or field. You can detach 1 Xyz Material from this card, then target 1 monster your opponent controls; its ATK becomes half its current ATK, and if it does, this card gains that lost ATK. These changes last until the End Phase.', {
+            fontFamily: 'serif',
+            fontSize: '16px',
+            color: '#000',
+            wordWrap: { width: 340 }
+          });
+          descText.setOrigin(0.5, 0);
+          this.cardContainer.add(descText);
+
+          // ATK/DEF
+          const statText = this.add.text(120, 230, 'ATK/3000 DEF/3000', {
+            fontFamily: 'serif',
+            fontSize: '18px',
+            color: '#000',
+            fontStyle: 'bold',
+          });
+          statText.setOrigin(0.5, 0.5);
+          this.cardContainer.add(statText);
+
+          this.cardContainer.setVisible(false);
+          this.cardContainer.setDepth(1000);
+
+          // Show card for 3 seconds when 'C' is pressed
           this.input.keyboard.on('keydown-C', () => {
-            // Đặt vị trí giữa màn hình, lệch lên trên 50px
-            this.yellowCardContainer.setPosition(
+            this.cardContainer.setPosition(look
               this.sys.game.config.width / 2,
               this.sys.game.config.height / 2 - 50
             );
-            this.yellowCardContainer.setVisible(true);
-            this.yellowCardContainer.setAlpha(0);
-            this.yellowCardContainer.setScale(0.5, 0.5);
-
-            // Đảm bảo mặt trước ban đầu
-            this.yellowCard.fillColor = 0xffff00;
-            this.yellowCardAvatar.setVisible(true);
-
+            this.cardContainer.setVisible(true);
+            this.cardContainer.setAlpha(0);
+            this.cardContainer.setScale(0.5, 0.5);
             this.tweens.add({
-              targets: this.yellowCardContainer,
+              targets: this.cardContainer,
               alpha: 1,
               scaleX: 1,
               scaleY: 1,
@@ -317,34 +360,23 @@
               onComplete: () => {
                 this.time.delayedCall(2200, () => {
                   this.tweens.add({
-                    targets: this.yellowCardContainer,
+                    targets: this.cardContainer,
                     scaleX: -1,
                     ease: 'Cubic.InOut',
                     duration: 400,
                     yoyo: true,
-                    onUpdate: () => {
-                      if (this.yellowCardContainer.scaleX < 0) {
-                        this.yellowCard.fillColor = 0xff0000; // Đỏ
-                        this.yellowCardAvatar.setVisible(false);
-                      } else {
-                        this.yellowCard.fillColor = 0xffff00; // Vàng
-                        this.yellowCardAvatar.setVisible(true);
-                      }
-                    },
                     onYoyo: () => {
-                      this.yellowCard.fillColor = 0xffff00;
-                      this.yellowCardAvatar.setVisible(true);
                       this.tweens.add({
-                        targets: this.yellowCardContainer,
+                        targets: this.cardContainer,
                         alpha: 0,
                         scaleX: 0.5,
                         scaleY: 0.5,
                         ease: 'Back.In',
                         duration: 400,
                         onComplete: () => {
-                          this.yellowCardContainer.setVisible(false);
-                          this.yellowCardContainer.setScale(1, 1);
-                          this.yellowCardContainer.scaleX = 1;
+                          this.cardContainer.setVisible(false);
+                          this.cardContainer.setScale(1, 1);
+                          this.cardContainer.scaleX = 1;
                         },
                       });
                     },
