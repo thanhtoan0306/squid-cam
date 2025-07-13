@@ -315,11 +315,6 @@
           const nameMaxWidth = 370 - paddingLeft; // Không cần trừ icon nữa
           const nameTextStr = truncateTextToWidth(this, nameRaw, nameMaxWidth, nameStyle);
           // nameText căn giữa lại
-          const nameText = this.add.text(0, -270, nameTextStr, nameStyle);
-          nameText.setOrigin(0.5, 0.5);
-          this.cardContainer.add(nameText);
-
-          // Khung ảnh minh họa
           const artBorderY = -40;
           const artBorderHeight = 360;
           const descBgHeight = 120;
@@ -328,6 +323,14 @@
           const artBorderBottom = artBorderY + artBorderHeight / 2; // 140
           const descBgY = artBorderBottom + descBgHeight / 2 + spacing; // 140 + 60 + 30 = 230
 
+          /*
+          // --- Mặt trước ---
+          // nameText
+          const nameText = this.add.text(0, -270, nameTextStr, nameStyle);
+          nameText.setOrigin(0.5, 0.5);
+          this.cardContainer.add(nameText);
+
+          // Khung ảnh minh họa
           const artBorder = this.add.rectangle(0, artBorderY, 360, 360, 0xFFD700);
           this.cardContainer.add(artBorder);
           const artBg = this.add.rectangle(0, artBorderY, 340, 340, 0x000000);
@@ -336,7 +339,7 @@
           const artImg = this.add.image(0, artBorderY, 'avatarGojo').setDisplaySize(340, 340);
           this.cardContainer.add(artImg);
 
-          // Khung mô tả cách artBorder spacing px phía dưới
+          // Khung mô tả
           const descBg = this.add.rectangle(0, descBgY, 360, descBgHeight, 0xffffff);
           this.cardContainer.add(descBg);
           const descText = this.add.text(0, descBgY - 30, '💙my🏠@Ryy 🦁🇻🇳🧡~acc phu👉🏻@ndt2followbyryy ~thanks for like & follow 🙆‍♂️', {
@@ -347,6 +350,14 @@
           });
           descText.setOrigin(0.5, 0);
           this.cardContainer.add(descText);
+          */
+
+          // --- Mặt sau ---
+          this.backRect = this.add.rectangle(0, 0, 400, 600, 0x000000);
+          this.cardContainer.add(this.backRect);
+          this.cardBackIcon = this.add.image(0, 0, 'roseIcon');
+          this.cardBackIcon.setDisplaySize(120, 120);
+          this.cardContainer.add(this.cardBackIcon);
 
           this.cardContainer.setVisible(false);
           this.cardContainer.setDepth(1000);
