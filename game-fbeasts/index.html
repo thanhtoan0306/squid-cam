@@ -314,8 +314,9 @@
           const paddingLeft = 20;
           const nameMaxWidth = 370 - paddingLeft; // Không cần trừ icon nữa
           const nameTextStr = truncateTextToWidth(this, nameRaw, nameMaxWidth, nameStyle);
-          const nameText = this.add.text(-200 + paddingLeft, -270, nameTextStr, nameStyle);
-          nameText.setOrigin(0, 0.5);
+          // nameText căn giữa lại
+          const nameText = this.add.text(0, -270, nameTextStr, nameStyle);
+          nameText.setOrigin(0.5, 0.5);
           this.cardContainer.add(nameText);
 
           // Khung ảnh minh họa
