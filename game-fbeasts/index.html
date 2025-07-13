@@ -257,6 +257,13 @@
             console.log('Player fire locked:', this.fireLocked);
           });
 
+          // Add key input for showing card
+          this.input.keyboard.on('keydown-C', () => {
+            if (!this.isCardFreeze) {
+              this.showCard();
+            }
+          });
+
           // Add a wall sprite or rectangle in front of the player
           const wallX = this.player.x + 150; // Adjust distance as needed
           const wallY = this.player.y;
@@ -351,56 +358,14 @@
           this.cardContainer.setVisible(false);
           this.cardContainer.setDepth(1000);
 
-          // Hiển thị card ngay khi load scene, không cần tween hiệu ứng
-          this.isCardFreeze = true;
+          // Khởi tạo card ẩn và sẵn sàng hiển thị khi nhấn C
+          this.isCardFreeze = false;
           this.cardContainer.setPosition(
             this.sys.game.config.width / 2,
             this.sys.game.config.height / 2 - 50
           );
-          this.cardContainer.setVisible(true);
-          this.cardContainer.setAlpha(1);
-          this.cardContainer.setScale(1, 1);
-          // Không chạy tween, card giữ nguyên trên màn hình
-
-          
-          // --- Tween hiệu ứng xuất hiện/ẩn card (bỏ comment để dùng lại) ---
           this.cardContainer.setAlpha(0);
           this.cardContainer.setScale(0.5, 0.5);
-          this.tweens.add({
-            targets: this.cardContainer,
-            alpha: 1,
-            scaleX: 1,
-            scaleY: 1,
-            ease: 'Back.Out',
-            duration: 400,
-            onComplete: () => {
-              this.time.delayedCall(2200, () => {
-                this.tweens.add({
-                  targets: this.cardContainer,
-                  scaleX: -1,
-                  ease: 'Cubic.InOut',
-                  duration: 400,
-                  yoyo: true,
-                  onYoyo: () => {
-                    this.tweens.add({
-                      targets: this.cardContainer,
-                      alpha: 0,
-                      scaleX: 0.5,
-                      scaleY: 0.5,
-                      ease: 'Back.In',
-                      duration: 400,
-                      onComplete: () => {
-                        this.cardContainer.setVisible(false);
-                        this.cardContainer.setScale(1, 1);
-                        this.cardContainer.scaleX = 1;
-                        this.isCardFreeze = false;
-                      },
-                    });
-                  },
-                });
-              });
-            },
-          });
           
         }
 
@@ -926,6 +891,48 @@
             }
             if (oldDestroy) oldDestroy.call(this);
           };
+        }
+
+        showCard() {
+          this.isCardFreeze = true;
+          this.cardContainer.setVisible(true);
+          
+          // Tween hiệu ứng xuất hiện card
+          this.tweens.add({
+            targets: this.cardContainer,
+            alpha: 1,
+            scaleX: 1,
+            scaleY: 1,
+            ease: 'Back.Out',
+            duration: 400,
+            onComplete: () => {
+              this.time.delayedCall(2200, () => {
+                this.tweens.add({
+                  targets: this.cardContainer,
+                  scaleX: -1,
+                  ease: 'Cubic.InOut',
+                  duration: 400,
+                  yoyo: true,
+                  onYoyo: () => {
+                    this.tweens.add({
+                      targets: this.cardContainer,
+                      alpha: 0,
+                      scaleX: 0.5,
+                      scaleY: 0.5,
+                      ease: 'Back.In',
+                      duration: 400,
+                      onComplete: () => {
+                        this.cardContainer.setVisible(false);
+                        this.cardContainer.setScale(1, 1);
+                        this.cardContainer.scaleX = 1;
+                        this.isCardFreeze = false;
+                      },
+                    });
+                  },
+                });
+              });
+            },
+          });
         }
 
         checkCollisions() {
