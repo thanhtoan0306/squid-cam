@@ -264,6 +264,11 @@
             }
           });
 
+          // Add key input for falling roses
+          this.input.keyboard.on('keydown-V', () => {
+            this.createFallingRoses();
+          });
+
           // Add a wall sprite or rectangle in front of the player
           const wallX = this.player.x + 150; // Adjust distance as needed
           const wallY = this.player.y;
@@ -933,6 +938,126 @@
               });
             },
           });
+        }
+
+        createFallingRoses() {
+          const gameWidth = this.sys.game.config.width;
+          const gameHeight = this.sys.game.config.height;
+          
+          // Tính toán vị trí wall và right edge
+          const wallX = this.player.x + 150; // Vị trí wall
+          const rightEdge = gameWidth; // Right edge của màn hình
+          
+          // Tạo 100 quả bom ngẫu nhiên
+          for (let i = 0; i < 100; i++) {
+            // Chọn lane ngẫu nhiên
+            const randomLaneIndex = Math.floor(Math.random() * 3);
+            const laneY = this.laneYPositions[randomLaneIndex]; // Lấy Y position của lane
+            
+            // Vị trí X ngẫu nhiên từ wall đến right edge
+            const bombX = wallX + Math.random() * (rightEdge - wallX);
+            
+            // Vị trí Y ngẫu nhiên từ trên màn hình
+            const bombY = -50 - Math.random() * 200;
+            
+            // Tạo bom
+            const bomb = this.add.circle(
+              bombX, // Vị trí X ngẫu nhiên
+              bombY, // Vị trí Y ngẫu nhiên từ trên
+              6, // Kích thước bom nhỏ hơn
+              0x333333 // Màu đen như bom
+            );
+            
+            // Thêm viền đỏ cho bom
+            bomb.setStrokeStyle(1, 0xff0000);
+            
+            // Thêm physics cho bom
+            this.physics.world.enable(bomb);
+            bomb.body.setGravityY(400 + Math.random() * 200); // Trọng lực ngẫu nhiên
+            
+            // Set vận tốc ban đầu ngẫu nhiên
+            bomb.body.setVelocityX((Math.random() - 0.5) * 100); // Vận tốc X ngẫu nhiên
+            bomb.body.setVelocityY(150 + Math.random() * 100); // Vận tốc Y ngẫu nhiên
+            
+            // Thêm rotation cho hiệu ứng xoay khi rơi
+            bomb.body.setAngularVelocity(100 + Math.random() * 200);
+            
+            // Kiểm tra khi bom chạm đất (lane tương ứng)
+            this.time.addEvent({
+              delay: 16, // 60fps
+              callback: () => {
+                if (bomb.active && bomb.y >= laneY) {
+                  // Tạo hiệu ứng nổ tại vị trí bom
+                  this.createBombExplosion(bomb.x, laneY);
+                  bomb.destroy();
+                }
+              },
+              loop: true
+            });
+            
+            // Tự động xóa bom sau 6 giây
+            this.time.delayedCall(6000, () => {
+              if (bomb.active) {
+                bomb.destroy();
+              }
+            });
+          }
+        }
+        
+        createBombExplosion(x, y) {
+          // Tạo hiệu ứng nổ với explosion animation có sẵn
+          const explosion = this.add.sprite(x, y, 'explosion_1');
+          explosion.setScale(0.8); // Scale lớn hơn cho bom
+          explosion.on('animationcomplete', () => {
+            explosion.destroy();
+          });
+          explosion.play('explosion');
+          
+          // Phát âm thanh nổ
+          this.sound.play('explosionSound', { volume: 0.7 });
+        }
+        
+        createRoseImpact(x, y) {
+          // Tạo hiệu ứng particle khi hoa hồng chạm đất
+          const particles = this.add.particles(x, y, 'bullet_particle', {
+            speed: { min: 50, max: 150 },
+            scale: { start: 0.3, end: 0 },
+            lifespan: 1000,
+            quantity: 8,
+            blendMode: 'ADD',
+            tint: [0xff0000, 0xff69b4, 0xff1493] // Màu hồng đỏ
+          });
+          
+          // Tự động xóa particles sau 1 giây
+          this.time.delayedCall(1000, () => {
+            particles.destroy();
+          });
+          
+          // Tạo hiệu ứng sparkle
+          for (let i = 0; i < 5; i++) {
+            const sparkle = this.add.text(
+              x + (Math.random() - 0.5) * 50,
+              y + (Math.random() - 0.5) * 50,
+              '✨',
+              {
+                fontSize: '20px',
+                color: '#ffd700'
+              }
+            );
+            
+            // Tween cho sparkle
+            this.tweens.add({
+              targets: sparkle,
+              alpha: 0,
+              scaleX: 2,
+              scaleY: 2,
+              duration: 800,
+              ease: 'Power2',
+              onComplete: () => {
+                sparkle.destroy();
+              }
+            });
+          }
         }
 
         checkCollisions() {
