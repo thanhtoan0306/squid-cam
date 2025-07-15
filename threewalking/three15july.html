@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLB Model Loader</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+        }
+        
+        #progress {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="info">
+        <h3>GLB Model Loader</h3>
+        <p>Model: chappieboxing.glb (8.3MB)</p>
+        <p>Camera: Click and drag to rotate, scroll to zoom</p>
+        <p style="font-size: 12px; color: #aaa;">
+            ✅ GLB format preserves materials and textures
+        </p>
+    </div>
+    
+    <div id="controls">
+        <button onclick="loadGLBModel()">Load Chappie Boxing</button>
+        <button onclick="resetCamera()">Reset Camera</button>
+        <button onclick="debugModel()">Debug Model</button>
+        <button onclick="toggleWireframe()">Toggle Wireframe</button>
+        <button onclick="toggleAnimation()">Toggle Animation</button>
+        <button onclick="changeBackground()">Change Background</button>
+    </div>
+    
+    <div id="loading" class="loading" style="display: none;">Loading GLB model...</div>
+    <div id="progress" style="display: none;">0%</div>
+
+    <!-- Three.js và GLTF Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let currentModel = null;
+        let mixer = null;
+        let clock = new THREE.Clock();
+        let animations = [];
+        let currentAnimationIndex = 0;
+
+        // Khởi tạo scene
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lighting - Ánh sáng tốt cho GLB
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.6);
+            directionalLight2.position.set(-10, 5, -10);
+            scene.add(directionalLight2);
+
+            const pointLight = new THREE.PointLight(0xffffff, 0.5);
+            pointLight.position.set(0, 10, 0);
+            scene.add(pointLight);
+
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(20, 20);
+            scene.add(gridHelper);
+
+            // Axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+
+            // Load model mặc định
+            loadGLBModel();
+
+            animate();
+        }
+
+        // Load GLB model
+        function loadGLBModel() {
+            showLoading(true);
+            showProgress(true);
+            
+            // Xóa model hiện tại
+            if (currentModel) {
+                scene.remove(currentModel);
+                currentModel = null;
+            }
+            
+            if (mixer) {
+                mixer = null;
+            }
+
+            const loader = new THREE.GLTFLoader();
+            const modelPath = '../models/gltf/glb/chappieboxing.glb';
+            
+            loader.load(
+                modelPath,
+                function (gltf) {
+                    console.log('GLB Model loaded successfully:', gltf);
+                    
+                    const object = gltf.scene;
+                    
+                    // Scale và position model
+                    object.scale.setScalar(1.0); // GLB thường đã có scale phù hợp
+                    object.position.set(0, 0, 0);
+                    
+                    // Enable shadows
+                    object.traverse(function (child) {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                            
+                            // GLB thường có material tốt, chỉ cần đảm bảo encoding
+                            if (child.material && child.material.map) {
+                                child.material.map.encoding = THREE.sRGBEncoding;
+                            }
+                        }
+                    });
+                    
+                    // Setup animations
+                    if (gltf.animations && gltf.animations.length > 0) {
+                        animations = gltf.animations;
+                        mixer = new THREE.AnimationMixer(object);
+                        
+                        // Phát animation đầu tiên
+                        const action = mixer.clipAction(animations[0]);
+                        action.play();
+                        
+                        console.log('Animations found:', animations.length);
+                        animations.forEach((anim, index) => {
+                            console.log(`Animation ${index}:`, anim.name);
+                        });
+                    }
+                    
+                    scene.add(object);
+                    currentModel = object;
+                    
+                    // Điều chỉnh camera để fit model
+                    fitCameraToModel(object);
+                    
+                    showLoading(false);
+                    showProgress(false);
+                    
+                    // Cập nhật thông tin
+                    updateModelInfo(gltf);
+                },
+                function (xhr) {
+                    const percent = Math.round((xhr.loaded / xhr.total) * 100);
+                    document.getElementById('progress').textContent = percent + '%';
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('Error loading GLB model:', error);
+                    showLoading(false);
+                    showProgress(false);
+                    alert('Lỗi khi load GLB model: ' + error.message);
+                }
+            );
+        }
+
+        // Fit camera để model vừa màn hình
+        function fitCameraToModel(model) {
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            
+            cameraZ *= 1.5; // Thêm khoảng cách
+            
+            camera.position.set(center.x, center.y + maxDim * 0.5, center.z + cameraZ);
+            camera.lookAt(center);
+            
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        // Reset camera
+        function resetCamera() {
+            camera.position.set(0, 5, 10);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+
+        // Debug model
+        function debugModel() {
+            if (!currentModel) return;
+            
+            console.log('=== GLB MODEL DEBUG ===');
+            console.log('Model:', currentModel);
+            console.log('Animations:', animations);
+            console.log('Mixer:', mixer);
+            
+            currentModel.traverse(function (child) {
+                if (child.isMesh) {
+                    console.log('Mesh:', child.name);
+                    console.log('Geometry vertices:', child.geometry.attributes.position.count);
+                    console.log('Material:', child.material);
+                }
+            });
+        }
+
+        // Toggle wireframe
+        function toggleWireframe() {
+            if (!currentModel) return;
+            
+            currentModel.traverse(function (child) {
+                if (child.isMesh && child.material) {
+                    child.material.wireframe = !child.material.wireframe;
+                }
+            });
+        }
+
+        // Toggle animation
+        function toggleAnimation() {
+            if (!mixer) return;
+            
+            if (mixer.timeScale === 0) {
+                mixer.timeScale = 1;
+                console.log('Animation resumed');
+            } else {
+                mixer.timeScale = 0;
+                console.log('Animation paused');
+            }
+        }
+
+        // Change background
+        function changeBackground() {
+            const backgrounds = [
+                0x1a1a1a, // Dark grey
+                0x000000, // Black
+                0x2c3e50, // Dark blue
+                0x34495e, // Blue grey
+                0x8e44ad, // Purple
+                0x2980b9, // Blue
+                0x27ae60, // Green
+                0xf39c12, // Orange
+                0xe74c3c  // Red
+            ];
+            
+            const currentIndex = backgrounds.indexOf(scene.background.getHex());
+            const nextIndex = (currentIndex + 1) % backgrounds.length;
+            scene.background = new THREE.Color(backgrounds[nextIndex]);
+        }
+
+        // Update model info
+        function updateModelInfo(gltf) {
+            const infoDiv = document.getElementById('info');
+            const modelInfo = document.createElement('p');
+            modelInfo.innerHTML = `
+                <strong>Model Info:</strong><br>
+                Animations: ${gltf.animations ? gltf.animations.length : 0}<br>
+                Scene children: ${gltf.scene.children.length}
+            `;
+            
+            // Remove old info if exists
+            const oldInfo = infoDiv.querySelector('p:last-child');
+            if (oldInfo && oldInfo.textContent.includes('Model Info')) {
+                infoDiv.removeChild(oldInfo);
+            }
+            
+            infoDiv.appendChild(modelInfo);
+        }
+
+        // Hiển thị/ẩn loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Hiển thị/ẩn progress
+        function showProgress(show) {
+            document.getElementById('progress').style.display = show ? 'block' : 'none';
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            
+            if (mixer) {
+                mixer.update(delta);
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Khởi tạo khi trang load xong
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

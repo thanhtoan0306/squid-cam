@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FBX Model Loader</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="info">
+        <h3>3D Model Loader</h3>
+        <p>Models: suthanhhoa.fbx, aicap.fbx, icanbedrop.fbx, chappieboxing.glb</p>
+        <p>Camera: Click and drag to rotate, scroll to zoom</p>
+        <p style="font-size: 12px; color: #aaa;">
+            ⚠️ FBX files may lose material info. Use "New Materials" if model appears black.<br>
+            ✅ GLB format preserves materials and textures automatically.
+        </p>
+    </div>
+    
+    <div id="controls">
+        <button onclick="loadModel('suthanhhoa')">Load Suthanhhoa</button>
+        <button onclick="loadModel('aicap')">Load Aicap</button>
+        <button onclick="loadModel('icanbedrop')">Load Icanbedrop</button>
+        <button onclick="loadModel('chappie1')">Load Chappie Boxing</button>
+        <button onclick="loadModel('character')">Load Character</button>
+        <button onclick="loadGLBModel('chappieboxing')">Load GLB Direct</button>
+        <button onclick="resetCamera()">Reset Camera</button>
+        <button onclick="debugMaterials()">Debug Materials</button>
+        <button onclick="toggleWireframe()">Toggle Wireframe</button>
+        <button onclick="fixMaterials()">Fix Materials</button>
+        <button onclick="createNewMaterials()">New Materials</button>
+    </div>
+    
+    <div id="loading" class="loading" style="display: none;">Loading model...</div>
+
+    <!-- Three.js và FBX Loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fflate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Thêm GLTF Loader để hỗ trợ GLB -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let currentModel = null;
+        let mixer = null;
+        let clock = new THREE.Clock();
+
+        // Khởi tạo scene
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5, 10);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Lighting - Cải thiện ánh sáng
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            directionalLight.position.set(10, 10, 5);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight2.position.set(-10, 5, -10);
+            scene.add(directionalLight2);
+
+            const pointLight = new THREE.PointLight(0xffffff, 0.8);
+            pointLight.position.set(0, 10, 0);
+            scene.add(pointLight);
+
+            const pointLight2 = new THREE.PointLight(0xffffff, 0.6);
+            pointLight2.position.set(-10, 10, -10);
+            scene.add(pointLight2);
+
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(20, 20);
+            scene.add(gridHelper);
+
+            // Axes helper
+            const axesHelper = new THREE.AxesHelper(5);
+            scene.add(axesHelper);
+
+            // Load model mặc định
+            loadModel('suthanhhoa');
+
+            animate();
+        }
+
+        // Load model FBX hoặc GLB
+        function loadModel(modelName) {
+            showLoading(true);
+            
+            // Xóa model hiện tại
+            if (currentModel) {
+                scene.remove(currentModel);
+                currentModel = null;
+            }
+            
+            if (mixer) {
+                mixer = null;
+            }
+
+            // Thử load GLB trước (nếu có)
+            if (modelName === 'chappie1') {
+                loadGLBModel('chappieboxing');
+                return;
+            }
+
+            // Load FBX
+            const loader = new THREE.FBXLoader();
+            const modelPath = `../models/gltf/fbx/${modelName}.fbx`;
+            
+            loader.load(
+                modelPath,
+                function (object) {
+                    console.log('FBX Model loaded:', modelName);
+                    processLoadedModel(object, modelName);
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('Error loading FBX model:', error);
+                    
+                    // Nếu FBX lỗi, thử load GLB
+                    if (error.message.includes('FBX version not supported')) {
+                        console.log('Trying GLB format instead...');
+                        loadGLBModel(modelName);
+                    } else {
+                        showLoading(false);
+                        alert('Lỗi khi load model: ' + modelName + '\n' + error.message);
+                    }
+                }
+            );
+        }
+
+        // Load GLB model
+        function loadGLBModel(modelName) {
+            const loader = new THREE.GLTFLoader();
+            const modelPath = `../models/gltf/glb/${modelName}.glb`;
+            
+            loader.load(
+                modelPath,
+                function (gltf) {
+                    console.log('GLB Model loaded:', modelName);
+                    const object = gltf.scene;
+                    processLoadedModel(object, modelName, gltf);
+                },
+                function (xhr) {
+                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                },
+                function (error) {
+                    console.error('Error loading GLB model:', error);
+                    showLoading(false);
+                    alert('Lỗi khi load GLB model: ' + modelName + '\n' + error.message);
+                }
+            );
+        }
+
+        // Xử lý model đã load
+        function processLoadedModel(object, modelName, gltf = null) {
+            // Scale và position model
+            if (gltf) {
+                // GLB model - giữ nguyên scale
+                object.scale.setScalar(1.0);
+            } else {
+                // FBX model - scale nhỏ hơn
+                object.scale.setScalar(0.01);
+            }
+            object.position.set(0, 0, 0);
+            
+            // Enable shadows và cải thiện material
+            object.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    
+                    // Cải thiện material nếu cần (chỉ cho FBX)
+                    if (!gltf && child.material) {
+                        // Đảm bảo material có thể nhận ánh sáng
+                        if (child.material.map) {
+                            child.material.map.encoding = THREE.sRGBEncoding;
+                        }
+                        
+                        // Kiểm tra và sửa material quá tối
+                        if (child.material.color) {
+                            const color = child.material.color;
+                            const brightness = (color.r + color.g + color.b) / 3;
+                            console.log('Mesh:', child.name, 'Brightness:', brightness, 'Color:', color);
+                            
+                            // Nếu material quá tối (gần như đen), tăng độ sáng mạnh hơn
+                            if (brightness < 0.1) {
+                                child.material.color.setRGB(0.8, 0.8, 0.8); // Set màu xám sáng
+                                console.log('Fixed dark material for:', child.name);
+                            } else if (brightness < 0.3) {
+                                child.material.color.multiplyScalar(3.0); // Tăng độ sáng mạnh hơn
+                                console.log('Brightened material for:', child.name);
+                            }
+                        }
+                        
+                        // Đảm bảo material được cập nhật
+                        child.material.needsUpdate = true;
+                    } else if (!gltf && !child.material) {
+                        // Nếu không có material, tạo material mặc định (chỉ cho FBX)
+                        child.material = new THREE.MeshLambertMaterial({ 
+                            color: 0xcccccc,
+                            transparent: true,
+                            opacity: 0.9
+                        });
+                        console.log('Created default material for:', child.name);
+                    }
+                }
+            });
+            
+            // Setup animation mixer
+            if (gltf && gltf.animations && gltf.animations.length > 0) {
+                // GLB animations
+                mixer = new THREE.AnimationMixer(object);
+                const action = mixer.clipAction(gltf.animations[0]);
+                action.play();
+                console.log('GLB Animations found:', gltf.animations.length);
+            } else if (object.animations && object.animations.length > 0) {
+                // FBX animations
+                mixer = new THREE.AnimationMixer(object);
+                const action = mixer.clipAction(object.animations[0]);
+                action.play();
+                console.log('FBX Animations found:', object.animations.length);
+            }
+            
+            scene.add(object);
+            currentModel = object;
+            
+            // Tự động áp dụng material thông minh nếu cần (chỉ cho FBX)
+            if (!gltf) {
+                autoApplyMaterials(object);
+            }
+            
+            // Điều chỉnh camera để fit model
+            fitCameraToModel(object);
+            
+            showLoading(false);
+        }
+
+        // Fit camera để model vừa màn hình
+        function fitCameraToModel(model) {
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            
+            cameraZ *= 1.5; // Thêm khoảng cách
+            
+            camera.position.set(center.x, center.y + maxDim * 0.5, center.z + cameraZ);
+            camera.lookAt(center);
+            
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        // Reset camera
+        function resetCamera() {
+            camera.position.set(0, 5, 10);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+
+        // Hiển thị/ẩn loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+
+        // Debug materials
+        function debugMaterials() {
+            if (!currentModel) return;
+            
+            console.log('=== DEBUG MATERIALS ===');
+            currentModel.traverse(function (child) {
+                if (child.isMesh) {
+                    console.log('Mesh:', child.name);
+                    console.log('Material:', child.material);
+                    if (child.material) {
+                        console.log('Color:', child.material.color);
+                        console.log('Map:', child.material.map);
+                        console.log('Emissive:', child.material.emissive);
+                        console.log('Roughness:', child.material.roughness);
+                        console.log('Metalness:', child.material.metalness);
+                    }
+                }
+            });
+        }
+
+        // Toggle wireframe mode
+        function toggleWireframe() {
+            if (!currentModel) return;
+            
+            currentModel.traverse(function (child) {
+                if (child.isMesh && child.material) {
+                    child.material.wireframe = !child.material.wireframe;
+                }
+            });
+        }
+
+        // Fix materials - sửa chữa material hiện tại
+        function fixMaterials() {
+            if (!currentModel) return;
+            
+            console.log('=== FIXING MATERIALS ===');
+            currentModel.traverse(function (child) {
+                if (child.isMesh) {
+                    if (child.material) {
+                        // Force tăng độ sáng cho tất cả material
+                        if (child.material.color) {
+                            const color = child.material.color;
+                            const brightness = (color.r + color.g + color.b) / 3;
+                            
+                            if (brightness < 0.5) {
+                                // Tăng độ sáng mạnh
+                                child.material.color.multiplyScalar(5.0);
+                                console.log('Fixed material for:', child.name, 'New brightness:', (child.material.color.r + child.material.color.g + child.material.color.b) / 3);
+                            }
+                        }
+                        
+                        // Đảm bảo material có thể nhận ánh sáng
+                        child.material.transparent = false;
+                        child.material.opacity = 1.0;
+                        child.material.needsUpdate = true;
+                    }
+                }
+            });
+        }
+
+        // Tự động áp dụng material thông minh
+        function autoApplyMaterials(object) {
+            let hasValidMaterials = false;
+            let darkMaterialCount = 0;
+            let totalMeshes = 0;
+            
+            object.traverse(function (child) {
+                if (child.isMesh) {
+                    totalMeshes++;
+                    if (child.material && child.material.color) {
+                        const brightness = (child.material.color.r + child.material.color.g + child.material.color.b) / 3;
+                        if (brightness > 0.3) {
+                            hasValidMaterials = true;
+                        } else {
+                            darkMaterialCount++;
+                        }
+                    }
+                }
+            });
+            
+            // Nếu hầu hết material đều tối, tự động áp dụng material mới
+            if (darkMaterialCount > totalMeshes * 0.7) {
+                console.log('Auto-applying materials - most materials are too dark');
+                createNewMaterials();
+            }
+        }
+
+        // Tạo material mới cho tất cả mesh
+        function createNewMaterials() {
+            if (!currentModel) return;
+            
+            console.log('=== CREATING NEW MATERIALS ===');
+            
+            // Material cho character - dựa trên tên mesh
+            const characterMaterials = {
+                // Hair materials
+                'hair': new THREE.MeshLambertMaterial({ color: 0xfeca57 }), // Vàng
+                'Hair': new THREE.MeshLambertMaterial({ color: 0xfeca57 }),
+                'HAIR': new THREE.MeshLambertMaterial({ color: 0xfeca57 }),
+                
+                // Skin materials
+                'skin': new THREE.MeshLambertMaterial({ color: 0xffdbac }), // Da
+                'Skin': new THREE.MeshLambertMaterial({ color: 0xffdbac }),
+                'SKIN': new THREE.MeshLambertMaterial({ color: 0xffdbac }),
+                'body': new THREE.MeshLambertMaterial({ color: 0xffdbac }),
+                'Body': new THREE.MeshLambertMaterial({ color: 0xffdbac }),
+                
+                // Clothing materials
+                'shirt': new THREE.MeshLambertMaterial({ color: 0x4ecdc4 }), // Xanh lá
+                'Shirt': new THREE.MeshLambertMaterial({ color: 0x4ecdc4 }),
+                'top': new THREE.MeshLambertMaterial({ color: 0x4ecdc4 }),
+                'Top': new THREE.MeshLambertMaterial({ color: 0x4ecdc4 }),
+                'pants': new THREE.MeshLambertMaterial({ color: 0x45b7d1 }), // Xanh dương
+                'Pants': new THREE.MeshLambertMaterial({ color: 0x45b7d1 }),
+                'shorts': new THREE.MeshLambertMaterial({ color: 0x45b7d1 }),
+                'Shorts': new THREE.MeshLambertMaterial({ color: 0x45b7d1 }),
+                'shoes': new THREE.MeshLambertMaterial({ color: 0x6c5ce7 }), // Tím
+                'Shoes': new THREE.MeshLambertMaterial({ color: 0x6c5ce7 }),
+                'footwear': new THREE.MeshLambertMaterial({ color: 0x6c5ce7 }),
+                
+                // Default materials
+                'default': new THREE.MeshLambertMaterial({ color: 0xcccccc }), // Xám
+                'random': [
+                    new THREE.MeshLambertMaterial({ color: 0xff6b6b }), // Đỏ
+                    new THREE.MeshLambertMaterial({ color: 0x4ecdc4 }), // Xanh lá
+                    new THREE.MeshLambertMaterial({ color: 0x45b7d1 }), // Xanh dương
+                    new THREE.MeshLambertMaterial({ color: 0x96ceb4 }), // Xanh nhạt
+                    new THREE.MeshLambertMaterial({ color: 0xfeca57 }), // Vàng
+                    new THREE.MeshLambertMaterial({ color: 0xff9ff3 }), // Hồng
+                    new THREE.MeshLambertMaterial({ color: 0x54a0ff }), // Xanh đậm
+                    new THREE.MeshLambertMaterial({ color: 0x5f27cd }), // Tím
+                    new THREE.MeshLambertMaterial({ color: 0x00d2d3 }), // Cyan
+                    new THREE.MeshLambertMaterial({ color: 0xff9f43 })  // Cam
+                ]
+            };
+            
+            let randomIndex = 0;
+            currentModel.traverse(function (child) {
+                if (child.isMesh) {
+                    let material = characterMaterials.default;
+                    
+                    // Tìm material phù hợp dựa trên tên mesh
+                    const meshName = child.name.toLowerCase();
+                    for (let key in characterMaterials) {
+                        if (key !== 'default' && key !== 'random' && meshName.includes(key.toLowerCase())) {
+                            material = characterMaterials[key];
+                            break;
+                        }
+                    }
+                    
+                    // Nếu không tìm thấy, dùng material ngẫu nhiên
+                    if (material === characterMaterials.default) {
+                        material = characterMaterials.random[randomIndex % characterMaterials.random.length];
+                        randomIndex++;
+                    }
+                    
+                    child.material = material;
+                    child.material.needsUpdate = true;
+                    console.log('Applied material to:', child.name, 'Color:', child.material.color);
+                }
+            });
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            
+            if (mixer) {
+                mixer.update(delta);
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', onWindowResize, false);
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Khởi tạo khi trang load xong
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html> 
