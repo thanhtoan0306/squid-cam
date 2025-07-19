@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GLB Model Loader với Animation</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 100;
+            max-width: 300px;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="info">
+            <h3>GLB Model Viewer</h3>
+            <p>Model: genshin.glb</p>
+            <p>Animation: Từ model chính (0 animations)</p>
+            <p>Điều khiển:</p>
+            <ul>
+                <li>Chuột trái: Xoay camera</li>
+                <li>Chuột phải: Di chuyển camera</li>
+                <li>Scroll: Zoom in/out</li>
+            </ul>
+        </div>
+        
+        <div id="controls">
+            <button id="playBtn">Phát Animation</button>
+            <button id="pauseBtn">Tạm dừng</button>
+            <button id="resetBtn">Reset</button>
+            <button id="wireframeBtn">Wireframe</button>
+            <br>
+            <label>Tốc độ: <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1"></label>
+            <span id="speedValue">1.0x</span>
+        </div>
+        
+        <div id="loading">Đang tải model...</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <script>
+        // Khởi tạo scene, camera, renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x87CEEB);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        // Thêm controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Thiết lập camera
+        camera.position.set(0, 2, 5);
+        controls.update();
+
+        // Thêm ánh sáng
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        scene.add(directionalLight);
+
+        // Thêm ánh sáng điểm
+        const pointLight = new THREE.PointLight(0xff9000, 1, 100);
+        pointLight.position.set(10, 10, 10);
+        scene.add(pointLight);
+
+        // Thêm mặt phẳng
+        const planeGeometry = new THREE.PlaneGeometry(20, 20);
+        const planeMaterial = new THREE.MeshLambertMaterial({ color: 0x999999 });
+        const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.rotation.x = -Math.PI / 2;
+        plane.receiveShadow = true;
+        scene.add(plane);
+
+        // Biến toàn cục
+        let mixer;
+        let model;
+        let animations = [];
+        let currentAnimation = 0;
+        let isPlaying = true;
+        let clock = new THREE.Clock();
+
+        // Loader
+        const loader = new THREE.GLTFLoader();
+
+        // Load model chính
+        loader.load(
+            'Model/genshin.glb',
+            function (gltf) {
+                model = gltf.scene;
+                model.scale.set(1, 1, 1);
+                model.position.set(0, 0, 0);
+                
+                // Thiết lập shadow cho model
+                model.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                scene.add(model);
+
+                // Tạo mixer cho animation
+                mixer = new THREE.AnimationMixer(model);
+                
+                // Thêm animation từ model nếu có
+                if (gltf.animations && gltf.animations.length > 0) {
+                    animations = gltf.animations;
+                    const action = mixer.clipAction(animations[0]);
+                    action.play();
+                    console.log('Đã load animation từ model chính:', animations.length, 'animations');
+                    
+                    // Cập nhật thông tin
+                    const info = document.getElementById('info');
+                    info.innerHTML = info.innerHTML.replace('Animation: Từ model chính (0 animations)', 'Animation: Từ model chính (' + animations.length + ' animations)');
+                } else {
+                    console.log('Model không có animation data');
+                    const info = document.getElementById('info');
+                    info.innerHTML = info.innerHTML.replace('Animation: Từ model chính (0 animations)', 'Animation: Không có');
+                }
+                
+                // Ẩn loading
+                document.getElementById('loading').style.display = 'none';
+            },
+            function (xhr) {
+                console.log((xhr.loaded / xhr.total * 100) + '% loaded model');
+            },
+            function (error) {
+                console.error('Lỗi khi tải model:', error);
+                document.getElementById('loading').textContent = 'Lỗi khi tải model!';
+            }
+        );
+
+        // Xử lý controls
+        document.getElementById('playBtn').addEventListener('click', function() {
+            if (mixer) {
+                mixer.timeScale = 1;
+                isPlaying = true;
+            }
+        });
+
+        document.getElementById('pauseBtn').addEventListener('click', function() {
+            if (mixer) {
+                mixer.timeScale = 0;
+                isPlaying = false;
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            if (mixer) {
+                mixer.stopAllAction();
+                if (animations.length > 0) {
+                    const action = mixer.clipAction(animations[0]);
+                    action.reset();
+                    action.play();
+                }
+            }
+        });
+
+        document.getElementById('wireframeBtn').addEventListener('click', function() {
+            if (model) {
+                model.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.material.wireframe = !child.material.wireframe;
+                    }
+                });
+            }
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', function() {
+            const speed = parseFloat(this.value);
+            if (mixer) {
+                mixer.timeScale = speed;
+            }
+            document.getElementById('speedValue').textContent = speed.toFixed(1) + 'x';
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            if (mixer) {
+                mixer.update(delta);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Xử lý resize window
+        window.addEventListener('resize', function() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Bắt đầu animation loop
+        animate();
+    </script>
+</body>
+</html>

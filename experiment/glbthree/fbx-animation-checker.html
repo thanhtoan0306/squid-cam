@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FBX Animation Checker</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            color: white;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .file-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .file-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+        
+        .animation-list {
+            margin-left: 20px;
+        }
+        
+        .animation-item {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .loading {
+            color: #ffd700;
+        }
+        
+        .error {
+            color: #ff6b6b;
+        }
+        
+        .success {
+            color: #4CAF50;
+        }
+        
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        #log {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 FBX Animation Checker</h1>
+        
+        <button onclick="checkAllFBX()">Kiểm tra tất cả FBX</button>
+        <button onclick="clearLog()">Xóa log</button>
+        
+        <div id="results"></div>
+        
+        <div id="log"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+
+    <script>
+        const fbxFiles = [
+            { name: 'character.fbx', path: '../../models/gltf/fbx/character.fbx' },
+            { name: 'chappie1.fbx', path: '../../models/gltf/fbx/chappie1.fbx' },
+            { name: 'suthanhhoa.fbx', path: '../../models/gltf/fbx/suthanhhoa.fbx' },
+            { name: 'icanbedrop.fbx', path: '../../models/gltf/fbx/icanbedrop.fbx' },
+            { name: 'aicap.fbx', path: '../../models/gltf/fbx/aicap.fbx' },
+            { name: 'icanbedrop_anim.fbx', path: '../../experiment/three/Anims/icanbedrop.fbx' },
+            { name: 'MmaKick.fbx', path: '../../experiment/three/Anims/MmaKick.fbx' },
+            { name: 'icanbedrop1.fbx', path: '../../experiment/three/Anims/icanbedrop1.fbx' },
+            { name: 'anim1_JumpingDown.fbx', path: '../../experiment/three/Anims/anim1_JumpingDown.fbx' }
+        ];
+
+        const loader = new THREE.FBXLoader();
+        let resultsDiv = document.getElementById('results');
+        let logDiv = document.getElementById('log');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            logDiv.innerHTML = '';
+            resultsDiv.innerHTML = '';
+        }
+
+        function checkFBX(fileInfo) {
+            return new Promise((resolve, reject) => {
+                log(`🔍 Đang kiểm tra: ${fileInfo.name}`, 'loading');
+                
+                loader.load(
+                    fileInfo.path,
+                    function (object) {
+                        const animations = object.animations || [];
+                        const result = {
+                            name: fileInfo.name,
+                            path: fileInfo.path,
+                            animationCount: animations.length,
+                            animations: animations,
+                            object: object
+                        };
+                        
+                        log(`✅ ${fileInfo.name}: ${animations.length} animations`, 'success');
+                        
+                        if (animations.length > 0) {
+                            animations.forEach((anim, index) => {
+                                log(`   Animation ${index + 1}: "${anim.name}" (${anim.duration.toFixed(2)}s)`, 'info');
+                            });
+                        }
+                        
+                        resolve(result);
+                    },
+                    function (xhr) {
+                        const progress = (xhr.loaded / xhr.total * 100).toFixed(1);
+                        log(`📊 ${fileInfo.name}: ${progress}% loaded`, 'info');
+                    },
+                    function (error) {
+                        log(`❌ Lỗi khi tải ${fileInfo.name}: ${error.message}`, 'error');
+                        reject({ name: fileInfo.name, error: error.message });
+                    }
+                );
+            });
+        }
+
+        async function checkAllFBX() {
+            clearLog();
+            log('🚀 Bắt đầu kiểm tra tất cả file FBX...', 'info');
+            
+            const results = [];
+            const errors = [];
+            
+            for (const fileInfo of fbxFiles) {
+                try {
+                    const result = await checkFBX(fileInfo);
+                    results.push(result);
+                } catch (error) {
+                    errors.push(error);
+                }
+            }
+            
+            // Hiển thị kết quả tổng hợp
+            displayResults(results, errors);
+        }
+
+        function displayResults(results, errors) {
+            log('📋 KẾT QUẢ TỔNG HỢP:', 'info');
+            log(`✅ Thành công: ${results.length} files`, 'success');
+            log(`❌ Lỗi: ${errors.length} files`, 'error');
+            
+            // Tạo HTML cho kết quả
+            let html = '<h2>📊 Kết quả chi tiết:</h2>';
+            
+            if (results.length > 0) {
+                html += '<h3>✅ Files thành công:</h3>';
+                results.forEach(result => {
+                    html += `
+                        <div class="file-section">
+                            <div class="file-title">${result.name}</div>
+                            <div>Số animation: <strong>${result.animationCount}</strong></div>
+                            <div>Đường dẫn: ${result.path}</div>
+                            ${result.animationCount > 0 ? '<div class="animation-list">' + 
+                                result.animations.map((anim, index) => 
+                                    `<div class="animation-item">${index + 1}. "${anim.name}" (${anim.duration.toFixed(2)}s)</div>`
+                                ).join('') + '</div>' : ''
+                            }
+                        </div>
+                    `;
+                });
+            }
+            
+            if (errors.length > 0) {
+                html += '<h3>❌ Files lỗi:</h3>';
+                errors.forEach(error => {
+                    html += `
+                        <div class="file-section">
+                            <div class="file-title" style="color: #ff6b6b;">${error.name}</div>
+                            <div class="error">Lỗi: ${error.error}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Thống kê
+            const totalAnimations = results.reduce((sum, result) => sum + result.animationCount, 0);
+            const filesWithAnimations = results.filter(result => result.animationCount > 0).length;
+            
+            html += `
+                <div class="file-section" style="background: rgba(76, 175, 80, 0.2);">
+                    <h3>📈 Thống kê:</h3>
+                    <div>• Tổng số file: ${results.length + errors.length}</div>
+                    <div>• Files thành công: ${results.length}</div>
+                    <div>• Files có animation: ${filesWithAnimations}</div>
+                    <div>• Tổng số animation: ${totalAnimations}</div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        // Tự động chạy khi trang load
+        window.addEventListener('load', () => {
+            log('🎯 FBX Animation Checker đã sẵn sàng!', 'success');
+            log('Nhấn "Kiểm tra tất cả FBX" để bắt đầu...', 'info');
+        });
+    </script>
+</body>
+</html> 

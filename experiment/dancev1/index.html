@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FBX Loader - Call of Silence</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <div id="info">
+        <h3>FBX Loader - Call of Silence</h3>
+        <p>Di chuyển chuột để xoay camera</p>
+        <p>Cuộn chuột để zoom</p>
+    </div>
+    
+    <div id="loading">Đang tải mô hình...</div>
+    
+    <div class="controls">
+        <button onclick="toggleAnimation()">Play/Pause Animation</button>
+        <button onclick="resetCamera()">Reset Camera</button>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fflate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // Khởi tạo scene, camera, renderer
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x1a1a1a);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        
+        document.getElementById('container').appendChild(renderer.domElement);
+        
+        // Thêm controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        
+        // Thiết lập camera
+        camera.position.set(0, 5, 10);
+        controls.update();
+        
+        // Thêm ánh sáng
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 10, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        scene.add(directionalLight);
+        
+        // Thêm grid helper
+        const gridHelper = new THREE.GridHelper(20, 20);
+        scene.add(gridHelper);
+        
+        // Biến để lưu trữ animation mixer
+        let mixer;
+        let animations = [];
+        let isPlaying = true;
+        
+        // Load FBX file
+        const loader = new THREE.FBXLoader();
+        loader.load(
+            'callofsilence.fbx',
+            function (object) {
+                console.log('FBX loaded successfully:', object);
+                
+                // Ẩn loading
+                document.getElementById('loading').style.display = 'none';
+                
+                // Thiết lập mô hình
+                object.scale.setScalar(0.01); // Scale down nếu cần
+                object.position.set(0, 0, 0);
+                
+                // Thiết lập shadow
+                object.traverse(function (child) {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                
+                scene.add(object);
+                
+                // Thiết lập animation
+                if (object.animations && object.animations.length > 0) {
+                    mixer = new THREE.AnimationMixer(object);
+                    animations = object.animations;
+                    
+                    // Play tất cả animations
+                    animations.forEach((clip) => {
+                        const action = mixer.clipAction(clip);
+                        action.play();
+                    });
+                }
+                
+                // Điều chỉnh camera để fit mô hình
+                const box = new THREE.Box3().setFromObject(object);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = camera.fov * (Math.PI / 180);
+                let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+                
+                camera.position.set(center.x, center.y + 2, center.z + cameraZ * 1.5);
+                controls.target.copy(center);
+                controls.update();
+                
+            },
+            function (xhr) {
+                // Progress callback
+                const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                document.getElementById('loading').textContent = `Đang tải: ${percent}%`;
+            },
+            function (error) {
+                // Error callback
+                console.error('Error loading FBX:', error);
+                document.getElementById('loading').textContent = 'Lỗi khi tải file FBX!';
+            }
+        );
+        
+        // Animation loop
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            
+            // Update animation mixer
+            if (mixer && isPlaying) {
+                mixer.update(delta);
+            }
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Window resize handler
+        window.addEventListener('resize', onWindowResize, false);
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // Control functions
+        function toggleAnimation() {
+            isPlaying = !isPlaying;
+            if (mixer) {
+                if (isPlaying) {
+                    mixer.timeScale = 1;
+                } else {
+                    mixer.timeScale = 0;
+                }
+            }
+        }
+        
+        function resetCamera() {
+            camera.position.set(0, 5, 10);
+            controls.target.set(0, 0, 0);
+            controls.update();
+        }
+    </script>
+</body>
+</html>

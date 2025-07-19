@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js Model Viewer</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+      }
+
+      #container {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #info {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      #loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 18px;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #lighting-controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 200px;
+      }
+
+      .light-control {
+        margin: 10px 0;
+      }
+
+      .light-control label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+
+      .light-control input[type="range"] {
+        width: 100%;
+        margin: 5px 0;
+      }
+
+      .light-control .value {
+        font-size: 12px;
+        color: #ccc;
+      }
+
+      .light-toggle {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        margin: 2px;
+      }
+
+      .light-toggle.off {
+        background: #f44336;
+      }
+
+      #animation-controls {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 250px;
+      }
+
+      .animation-control {
+        margin: 10px 0;
+      }
+
+      .animation-control label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+
+      .animation-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin: 10px 0;
+      }
+
+      .animation-btn {
+        background: #2196f3;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background 0.3s;
+      }
+
+      .animation-btn:hover {
+        background: #1976d2;
+      }
+
+      .animation-btn.active {
+        background: #4caf50;
+      }
+
+      .animation-btn:disabled {
+        background: #666;
+        cursor: not-allowed;
+      }
+
+      .animation-info {
+        font-size: 12px;
+        color: #ccc;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container"></div>
+    <div id="info">
+      <h3>Three.js Model Viewer</h3>
+      <p>Model: character.fbx</p>
+      <p>Controls: Mouse để xoay, Scroll để zoom</p>
+      <p>Animations: Space để play/pause</p>
+    </div>
+
+    <div id="lighting-controls">
+      <h3>Điều chỉnh ánh sáng</h3>
+
+      <div class="light-control">
+        <label>Ánh sáng xung quanh (Ambient)</label>
+        <input
+          type="range"
+          id="ambient-intensity"
+          min="0"
+          max="2"
+          step="0.1"
+          value="0.6"
+        />
+        <div class="value">Cường độ: <span id="ambient-value">0.6</span></div>
+        <button class="light-toggle" id="ambient-toggle">Bật/Tắt</button>
+      </div>
+
+      <div class="light-control">
+        <label>Ánh sáng định hướng (Directional)</label>
+        <input
+          type="range"
+          id="directional-intensity"
+          min="0"
+          max="2"
+          step="0.1"
+          value="0.8"
+        />
+        <div class="value">
+          Cường độ: <span id="directional-value">0.8</span>
+        </div>
+        <button class="light-toggle" id="directional-toggle">Bật/Tắt</button>
+      </div>
+
+      <div class="light-control">
+        <label>Ánh sáng điểm (Point)</label>
+        <input
+          type="range"
+          id="point-intensity"
+          min="0"
+          max="2"
+          step="0.1"
+          value="0.5"
+        />
+        <div class="value">Cường độ: <span id="point-value">0.5</span></div>
+        <button class="light-toggle" id="point-toggle">Bật/Tắt</button>
+      </div>
+
+      <div class="light-control">
+        <label>Màu nền (Background)</label>
+        <input type="color" id="background-color" value="#1a1a1a" />
+        <button class="light-toggle" id="background-toggle">Đổi màu</button>
+      </div>
+    </div>
+
+    <div id="animation-controls">
+      <h3>Điều khiển Animation</h3>
+
+      <div class="animation-control">
+        <label>Animation hiện tại:</label>
+        <div class="animation-buttons">
+          <button class="animation-btn" id="anim-idle">Idle</button>
+          <button class="animation-btn" id="anim-jumping">Jumping Down</button>
+          <button class="animation-btn" id="anim-kick">MMA Kick</button>
+          <button class="animation-btn" id="anim-icanbedrop">
+            I Can Be Drop
+          </button>
+        </div>
+        <div class="animation-info">
+          <span id="current-anim-name">Idle</span> |
+          <span id="animation-status">Đang phát</span>
+        </div>
+      </div>
+
+      <div class="animation-control">
+        <label>Điều khiển:</label>
+        <div class="animation-buttons">
+          <button class="animation-btn" id="play-pause">⏸️ Tạm dừng</button>
+          <button class="animation-btn" id="reset-anim">🔄 Reset</button>
+          <button class="animation-btn" id="prev-anim">⏮️ Trước</button>
+          <button class="animation-btn" id="next-anim">⏭️ Tiếp</button>
+        </div>
+      </div>
+
+      <div class="animation-control">
+        <label>Tốc độ phát:</label>
+        <input
+          type="range"
+          id="animation-speed"
+          min="0.1"
+          max="3"
+          step="0.1"
+          value="1"
+        />
+        <div class="value">Tốc độ: <span id="speed-value">1.0</span>x</div>
+      </div>
+    </div>
+
+    <div id="loading">Đang tải model...</div>
+
+    <!-- Three.js và các dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fflate.min.js"></script>
+
+    <script>
+      // Khởi tạo scene, camera và renderer
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x1a1a1a);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      document.getElementById("container").appendChild(renderer.domElement);
+
+      // Controls
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(10, 10, 5);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.mapSize.width = 2048;
+      directionalLight.shadow.mapSize.height = 2048;
+      scene.add(directionalLight);
+
+      const pointLight = new THREE.PointLight(0xffffff, 0.5);
+      pointLight.position.set(-10, 10, -10);
+      scene.add(pointLight);
+
+      // Lighting controls
+      let lightsEnabled = {
+        ambient: true,
+        directional: true,
+        point: true,
+      };
+
+      // Camera position
+      camera.position.set(0, 5, 10);
+      camera.lookAt(0, 0, 0);
+
+      // Variables cho model và animation
+      let mixer;
+      let model;
+      let animations = [];
+      let currentAnimation = 0;
+      let isPlaying = true;
+      let currentAction = null;
+      let animationSpeed = 1.0;
+
+      // Animation names mapping
+      const animationNames = {
+        idle: "Idle",
+        jumping: "Jumping Down",
+        kick: "MMA Kick",
+      };
+
+      // Load model
+      const loader = new THREE.FBXLoader();
+
+      loader.load(
+        "./Models/character.fbx",
+        function (object) {
+          model = object;
+          scene.add(model);
+
+          // Scale và position model
+          model.scale.setScalar(0.01);
+          model.position.set(0, 0, 0);
+
+          // Setup shadows
+          model.traverse(function (child) {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          // Setup animation mixer
+          if (object.animations.length > 0) {
+            mixer = new THREE.AnimationMixer(object);
+            animations = object.animations;
+
+            // Play first animation
+            if (animations.length > 0) {
+              currentAction = mixer.clipAction(animations[0]);
+              currentAction.play();
+              updateAnimationUI();
+            }
+          }
+
+          // Load external animations
+          loadExternalAnimations();
+
+          // Hide loading
+          document.getElementById("loading").classList.add("hidden");
+
+          console.log("Model loaded successfully!");
+          console.log("Animations:", animations.length);
+        },
+        function (xhr) {
+          const progress = (xhr.loaded / xhr.total) * 100;
+          document.getElementById(
+            "loading"
+          ).innerHTML = `Đang tải model... ${Math.round(progress)}%`;
+        },
+        function (error) {
+          console.error("Error loading model:", error);
+          document.getElementById("loading").innerHTML = "Lỗi tải model!";
+        }
+      );
+
+      // Load external animations
+      function loadExternalAnimations() {
+        const externalAnimations = [
+          { path: "./Anims/anim1_JumpingDown.fbx", name: "jumping" },
+          { path: "./Anims/MmaKick.fbx", name: "kick" },
+          { path: "./Anims/icanbedrop.fbx", name: "icanbedrop" },
+        ];
+
+        externalAnimations.forEach((anim, index) => {
+          loader.load(
+            anim.path,
+            function (object) {
+              if (object.animations.length > 0) {
+                // Add external animation to the main model
+                const clip = object.animations[0];
+                clip.name = anim.name;
+                animations.push(clip);
+                console.log(`Loaded external animation: ${anim.name}`);
+              }
+            },
+            function (xhr) {
+              console.log(
+                `Loading ${anim.name}: ${Math.round(
+                  (xhr.loaded / xhr.total) * 100
+                )}%`
+              );
+            },
+            function (error) {
+              console.error(`Error loading animation ${anim.name}:`, error);
+            }
+          );
+        });
+      }
+
+      // Update animation UI
+      function updateAnimationUI() {
+        const animNames = ["idle", "jumping", "kick"];
+        animNames.forEach((name, index) => {
+          const btn = document.getElementById(`anim-${name}`);
+          if (btn) {
+            btn.classList.toggle("active", index === currentAnimation);
+          }
+        });
+
+        const currentName = animations[currentAnimation]
+          ? animationNames[animNames[currentAnimation]] ||
+            animations[currentAnimation].name
+          : "Unknown";
+        document.getElementById("current-anim-name").textContent = currentName;
+
+        const status = isPlaying ? "Đang phát" : "Đã tạm dừng";
+        document.getElementById("animation-status").textContent = status;
+
+        const playPauseBtn = document.getElementById("play-pause");
+        if (playPauseBtn) {
+          playPauseBtn.innerHTML = isPlaying ? "⏸️ Tạm dừng" : "▶️ Phát";
+        }
+      }
+
+      // Play animation
+      function playAnimation(index) {
+        if (mixer && animations[index]) {
+          if (currentAction) {
+            currentAction.stop();
+          }
+          currentAnimation = index;
+          currentAction = mixer.clipAction(animations[index]);
+          currentAction.setLoop(THREE.LoopRepeat);
+          currentAction.timeScale = animationSpeed;
+          currentAction.play();
+          updateAnimationUI();
+        }
+      }
+
+      // Toggle play/pause
+      function togglePlayPause() {
+        if (mixer) {
+          isPlaying = !isPlaying;
+          if (isPlaying) {
+            mixer.timeScale = animationSpeed;
+          } else {
+            mixer.timeScale = 0;
+          }
+          updateAnimationUI();
+        }
+      }
+
+      // Reset animation
+      function resetAnimation() {
+        if (mixer && currentAction) {
+          currentAction.reset();
+          currentAction.play();
+        }
+      }
+
+      // Ground plane
+      const groundGeometry = new THREE.PlaneGeometry(20, 20);
+      const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+      const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // Animation loop
+      const clock = new THREE.Clock();
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const delta = clock.getDelta();
+
+        if (mixer && isPlaying) {
+          mixer.update(delta);
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+      }
+
+      // Animation controls event listeners
+      document
+        .getElementById("anim-idle")
+        .addEventListener("click", () => playAnimation(0));
+      document
+        .getElementById("anim-jumping")
+        .addEventListener("click", () => playAnimation(1));
+      document
+        .getElementById("anim-kick")
+        .addEventListener("click", () => playAnimation(2));
+      document
+        .getElementById("anim-icanbedrop")
+        .addEventListener("click", () => playAnimation(3));
+      document
+        .getElementById("play-pause")
+        .addEventListener("click", togglePlayPause);
+      document
+        .getElementById("reset-anim")
+        .addEventListener("click", resetAnimation);
+
+      document.getElementById("prev-anim").addEventListener("click", () => {
+        if (animations.length > 0) {
+          const newIndex =
+            (currentAnimation - 1 + animations.length) % animations.length;
+          playAnimation(newIndex);
+        }
+      });
+
+      document.getElementById("next-anim").addEventListener("click", () => {
+        if (animations.length > 0) {
+          const newIndex = (currentAnimation + 1) % animations.length;
+          playAnimation(newIndex);
+        }
+      });
+
+      // Animation speed control
+      document
+        .getElementById("animation-speed")
+        .addEventListener("input", function (e) {
+          animationSpeed = parseFloat(e.target.value);
+          document.getElementById("speed-value").textContent =
+            animationSpeed.toFixed(1);
+          if (mixer) {
+            mixer.timeScale = isPlaying ? animationSpeed : 0;
+          }
+          if (currentAction) {
+            currentAction.timeScale = animationSpeed;
+          }
+        });
+
+      // Keyboard controls
+      document.addEventListener("keydown", function (event) {
+        switch (event.code) {
+          case "Space":
+            event.preventDefault();
+            togglePlayPause();
+            break;
+          case "ArrowRight":
+            if (animations.length > 0) {
+              const newIndex = (currentAnimation + 1) % animations.length;
+              playAnimation(newIndex);
+            }
+            break;
+          case "ArrowLeft":
+            if (animations.length > 0) {
+              const newIndex =
+                (currentAnimation - 1 + animations.length) % animations.length;
+              playAnimation(newIndex);
+            }
+            break;
+        }
+      });
+
+      // Window resize
+      window.addEventListener("resize", function () {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // Lighting controls event listeners
+      document
+        .getElementById("ambient-intensity")
+        .addEventListener("input", function (e) {
+          const value = parseFloat(e.target.value);
+          ambientLight.intensity = lightsEnabled.ambient ? value : 0;
+          document.getElementById("ambient-value").textContent =
+            value.toFixed(1);
+        });
+
+      document
+        .getElementById("directional-intensity")
+        .addEventListener("input", function (e) {
+          const value = parseFloat(e.target.value);
+          directionalLight.intensity = lightsEnabled.directional ? value : 0;
+          document.getElementById("directional-value").textContent =
+            value.toFixed(1);
+        });
+
+      document
+        .getElementById("point-intensity")
+        .addEventListener("input", function (e) {
+          const value = parseFloat(e.target.value);
+          pointLight.intensity = lightsEnabled.point ? value : 0;
+          document.getElementById("point-value").textContent = value.toFixed(1);
+        });
+
+      // Toggle buttons
+      document
+        .getElementById("ambient-toggle")
+        .addEventListener("click", function () {
+          lightsEnabled.ambient = !lightsEnabled.ambient;
+          ambientLight.intensity = lightsEnabled.ambient
+            ? parseFloat(document.getElementById("ambient-intensity").value)
+            : 0;
+          this.classList.toggle("off", !lightsEnabled.ambient);
+          this.textContent = lightsEnabled.ambient ? "Bật/Tắt" : "Bật/Tắt";
+        });
+
+      document
+        .getElementById("directional-toggle")
+        .addEventListener("click", function () {
+          lightsEnabled.directional = !lightsEnabled.directional;
+          directionalLight.intensity = lightsEnabled.directional
+            ? parseFloat(document.getElementById("directional-intensity").value)
+            : 0;
+          this.classList.toggle("off", !lightsEnabled.directional);
+          this.textContent = lightsEnabled.directional ? "Bật/Tắt" : "Bật/Tắt";
+        });
+
+      document
+        .getElementById("point-toggle")
+        .addEventListener("click", function () {
+          lightsEnabled.point = !lightsEnabled.point;
+          pointLight.intensity = lightsEnabled.point
+            ? parseFloat(document.getElementById("point-intensity").value)
+            : 0;
+          this.classList.toggle("off", !lightsEnabled.point);
+          this.textContent = lightsEnabled.point ? "Bật/Tắt" : "Bật/Tắt";
+        });
+
+      // Background color control
+      document
+        .getElementById("background-color")
+        .addEventListener("input", function (e) {
+          renderer.setClearColor(e.target.value);
+        });
+
+      document
+        .getElementById("background-toggle")
+        .addEventListener("click", function () {
+          const colorPicker = document.getElementById("background-color");
+          colorPicker.click();
+        });
+
+      // Start animation loop
+      animate();
+    </script>
+  </body>
+</html>
